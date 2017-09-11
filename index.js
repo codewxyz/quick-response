@@ -4,12 +4,27 @@ var nunjucks = require('nunjucks');
 var io = require('socket.io')(http);
 var serveStatic = require('serve-static');//get static file
 var bodyParser = require('body-parser');//read data from post method
+var session = require('express-session');
+
+//load models
+var users = require('./models/users.js');
+
+//load auth
+var mAuth = require('./middleware/auth.js');
+var auth = require('./lib/auth.js');
 
 //set public directory for static files (css,js)
 app.use(serveStatic('public', { 'index': false }));
+app.use(session({ 
+	secret: 'qr app',  
+	resave: false,
+  	saveUninitialized: false,
+	cookie: { maxAge: 60000 }
+}));
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(auth.checkLogin());
 
 //set up template engine for nunjucks
 nunjucks.configure('views', {
@@ -30,47 +45,54 @@ app.get('/login', function(req, res) {
 });
 app.post('/login', function(req, res) {
     console.log(req.body);
-
     if (!req.body) return res.sendStatus(400);
-    res.send('welcome, ' + req.body.username);
+	var getUser = auth.login(req.body.username, req.body.password);
+    if (getUser !== false) {
+    	req.session.user = getUser;
+    	res.send('welcome, ' + getUser.name);
+    } else {
+    	res.redirect('/login');
+    }
 });
 app.get('/main', function(req, res) {
     res.render('chat_room.html');
 });
 
 //handling socket.io
-io.on('connection', function(socket) {
-    console.log('a user connected 1');
+// io.on('connection', function(socket) {
+//     console.log('a user connected 1');
 
-    socket.on('disconnect', function() {
-        console.log('user disconnected');
-    });
-    socket.on('chat message', function(msg) {
-        console.log(msg);
-        io.emit('chat message', msg);
-    });
-})
+//     socket.on('disconnect', function() {
+//         console.log('user disconnected');
+//     });
+//     socket.on('chat message', function(msg) {
+//         console.log(msg);
+//         io.emit('chat message', msg);
+//     });
+// })
 
 //socket for ttm
-var ttm = io.of('/ttm-chat');
-ttm.on('connection', function(socket) {
-    console.log('someone connected to ttm');
-    socket.join('tinh tinh', () => {
-        let rooms = Object.keys(socket.rooms);
-        console.log(rooms); // [ <socket.id>, 'room 237' ]
-    });
+// var ttm = io.of('/ttm-chat');
+// ttm.on('connection', function(socket) {
+//     console.log('someone connected to ttm');
+//     socket.join('tinh tinh', () => {
+//         let rooms = Object.keys(socket.rooms);
+//         console.log(rooms); // [ <socket.id>, 'room 237' ]
+//     });
 
-    socket.in('tinh tinh').on('chat message', function(msg) {
-        console.log('ttm room tinh tinh ' + msg);
-        ttm.in('tinh tinh').emit('chat message', msg);
-    });
+//     socket.in('tinh tinh').on('chat message', function(msg) {
+//         console.log('ttm room tinh tinh ' + msg);
+//         ttm.in('tinh tinh').emit('chat message', msg);
+//     });
 
-    console.log('socket id ' + socket.id);
-    console.log('rooms ');
-    console.log(socket.rooms);
-});
+//     console.log('socket id ' + socket.id);
+//     console.log('rooms ');
+//     console.log(socket.rooms);
+// });
 
-//server listen
-http.listen(3000, function() {
-    console.log('listening on *:3000');
-});
+if (!module.parent) {
+	//server listen
+	http.listen(3000, function() {
+	    console.log('server listening on *:3000');
+	});	
+}
