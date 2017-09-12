@@ -1,8 +1,9 @@
 {% extends "layout.html" %} 
 
 {% block content %}
+{% include "./partial/header_logo.html" %}
 <div class="row">
-    <div class="col-sm-12">
+    <div class="col-lg-4 col-lg-offset-4 col-sm-6 col-sm-offset-3 col-xs-12 form-container">
         <form method="post" action="/register">
             <div class="form-group">
                 <label for="username">Username</label>
@@ -21,7 +22,16 @@
                 <input type="password" class="form-control" id="password" placeholder="Password" name="password2">
             </div>
             <button type="submit" class="btn btn-default">Register</button>
+            <button type="button" class="btn btn-sm btn-default" id="btn-cancel">Cancel</button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block script %} 
+<script type="text/javascript">
+    $('#btn-cancel').on('click', function () {
+        location.href = '/login';
+    });
+</script>
 {% endblock %}

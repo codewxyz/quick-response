@@ -2,8 +2,34 @@
 
 {% block content %}
 <div class="row">
+    <div class="col-sm-12">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">
+                        <img class="img-responsive" style="height: 100%;" src="/images/logo.png" alt="QR Logo" title="QR" />
+                    </a>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="#">Home <span class="sr-only">(current)</span></a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="#">Setting</a></li>
+                        <li><a href="#">Logout</a></li>
+                    </ul>
+                </div>
+                <!-- /.navbar-collapse -->
+            </div>
+            <!-- /.container-fluid -->
+        </nav>
+    </div>
+</div>
+<div class="row">
     <div class="col-sm-4">
-        <a href="?msg=15" class="chatperson">
+                <a href="?msg=15" class="chatperson chat-active">
                     <span class="chatimg">
                         <img src="http://via.placeholder.com/50x50?text=A" alt="" />
                     </span>
@@ -33,38 +59,33 @@
         <div class="chatbody">
             <table class="table">
                 <tr>
-                    <td><img src="http://via.placeholder.com/50x50?text=A" /></td>
-                    <td>sdk fnsdkjnsadjnlk anflkjasdnflk kjasndlkfjnsdfs adfjksd ofh saddf lsdnflksnadl fjnasdfl ajsndflkja nlnfsdjlnf aslnfd as</td>
-                    <td>15:20</td>
+                    <td class="avatar"><img src="./images/default-user.png" /></td>
+                    <td class="display-msg">
+                    <p>giangtp 15:20</p>
+                    <p>Hi</p>
+                    </td></td>
+                    <td class="msg-info">
+                        Opts
+                    </td>
                 </tr>
                 <tr>
-                    <td><img src="http://via.placeholder.com/50x50?text=B" /></td>
-                    <td>sdk fnsdkjnsadjnlk adfjksd ofh saddf lsdnflksnadl fjnasdfl ajsndflkja nlnfsdjlnf aslnfd as</td>
-                    <td>15:20</td>
-                </tr>
-                <tr>
-                    <td><img src="http://via.placeholder.com/50x50?text=A" /></td>
-                    <td>sdk fnsdkjnsadjnlk anflkjasdnflk kjasndl sdflksnfl jsdkfjsafkjsnd fnsalddf sdjdknkfjnsdfs adfjksd ofh saddf lsdnflksnadl fjnasdfl ajsndflkja nlnfsdjlnf aslnfd as</td>
-                    <td>15:20</td>
-                </tr>
-                <tr>
-                    <td><img src="http://via.placeholder.com/50x50?text=B" /></td>
-                    <td>sdk sf s aslnfd as</td>
-                    <td>15:20</td>
-                </tr>
-                <tr>
-                    <td><img src="http://via.placeholder.com/50x50?text=A" /></td>
-                    <td>sdk fnsdkjnsadjnlk anflkjasdnflk c vlsndl v slkdknf sdkmnfkfsndf kasndfllk asnddlflkn sadfn sadn sandf sadf sajdf sdf sdflksnfl jsdkfjsafkjsnd fnsalddf sdjdknkfjnsdfs adfjksd ofh saddf lsdnflksnadl fjnasdfl ajsndflkja nlnfsdjlnf aslnfd as</td>
-                    <td>15:20</td>
+                    <td class="avatar avatar-me"><img src="http://via.placeholder.com/50x50?text=A" /></td>
+                    <td class="display-msg">
+                    <p>giangtp 15:20</p>
+                    <p>Hi sdk nskdfjnlssdf sdf ss fsdaf kjlsadjf nkksaddbhk jasddl sdf kjsdfoashf89f sdbfoi nkksaddbhk jasddl sdk nskdfjnlssdf sdf ss fsdaf kjlsadjf nkksaddbhk jasddl sdf kjsdfoashf89f sdbfoi nkksaddbhk jasddl</p>
+                    </td>
+                    <td class="msg-info">
+                        Opts
+                    </td>
                 </tr>
             </table>
         </div>
         <div class="row">
-            <div class="col-xs-9">
-                <input type="text" placeholder="Yozing..." class="form-control" />
+            <div class="col-sm-10 col-xs-9">
+                <textarea class="form-control input-chat-msg" placeholder="Input message here..." autofocus="true"></textarea>
             </div>
-            <div class="col-xs-3">
-                <button class="btn btn-info btn-block">Send</button>
+            <div class="col-sm-2 col-xs-3">
+                <button class="btn btn-info btn-block btn-chat-submit">Send</button>
             </div>
         </div>
     </div>

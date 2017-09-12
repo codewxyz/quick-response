@@ -1,6 +1,17 @@
+body {
+  background-color: #e6e6e6;
+}
+
+.form-container {
+  padding: 15px;
+  border: 2px solid #595959;
+  box-shadow: 3px 6px 12px gray
+}
+
 .chatperson{
   display: block;
-  border-bottom: 1px solid #eee;
+  border: 2px solid lightgray;
+  /*border-right: 4px solid #99ccff;*/
   width: 100%;
   display: flex;
   align-items: center;
@@ -8,19 +19,27 @@
   overflow: hidden;
   margin-bottom: 15px;
   padding: 4px;
+  background-color: whitesmoke;
+  color: black;
 }
 .chatperson:hover{
   text-decoration: none;
-  border-bottom: 1px solid orange;
+  border-right: 4px solid #99ccff;
+  color: black;
+}
+.chat-active {
+  border-right: 4px solid #99ccff;
 }
 .namechat {
     display: inline-block;
     vertical-align: middle;
+    padding-right: 40px;
+    width: 100%;
 }
 .chatperson .chatimg img{
   width: 40px;
   height: 40px;
-  background-image: url('http://i.imgur.com/JqEuJ6t.png');
+  border: 2px solid lightslategrey;
 }
 .chatperson .pname{
   font-size: 18px;
@@ -29,5 +48,46 @@
 .chatperson .lastmsg{
   font-size: 12px;
   padding-left: 5px;
-  color: #ccc;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.avatar {
+  width: 50px;
+}
+.avatar img {
+  width: 50px;
+  height: 50px;
+  border: 2px solid lightslategrey;  
+}
+
+.avatar-me img{
+  border: 2px solid lightseagreen;
+}
+
+.chatbody {
+  padding: 15px;
+  margin-bottom: 20px;
+  border-bottom: 4px solid black;
+  height: 450px;
+  background-color: whitesmoke;
+  overflow: auto;
+}
+@media max-width: 767px {
+  .chatbody {
+    height: auto;
+  }
+}
+.input-chat-msg {
+  min-height: 70px;
+  height: 70px;
+  max-width: 100%;
+}
+.btn-chat-submit {
+  height: 70px;
+}
+.msg-info {
+  width: 100%;
+}
+.display-msg {
+  width: 100%;
 }
