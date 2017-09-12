@@ -18,7 +18,7 @@
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
                         <li><a href="#">Setting</a></li>
-                        <li><a href="#">Logout</a></li>
+                        <li><a href="#" id="do-logout">Logout</a></li>
                     </ul>
                 </div>
                 <!-- /.navbar-collapse -->
@@ -90,15 +90,18 @@
         </div>
     </div>
 </div>
+<form id="fm-logout" action="/logout" method="post" class="invisible">
+</form>
 {% endblock %}
 
 {% block script %}
 <!-- socket.io for client side -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
 <script>
+
 $(function() {
     var socket = io('/ttm-chat');
-    $('form').submit(function() {
+    $('#fm123').submit(function() {
         socket.emit('chat message', $('#username').val() + '::' + $('#msg').val());
         $('#msg').val('');
         return false;
@@ -106,6 +109,10 @@ $(function() {
     socket.on('chat message', function(msg) {
         console.log('tinh tinh msg');
         $('#messages').append($('<li>').text(msg));
+    });
+
+    $('#do-logout').on('click', function () {
+        $('#fm-logout').submit();
     });
 });
 </script>
