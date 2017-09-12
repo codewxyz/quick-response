@@ -7,11 +7,20 @@ var bodyParser = require('body-parser');//read data from post method
 var session = require('express-session');
 
 //load models
-var users = require('./models/users.js');
+// var users = require('./models/users.js');
+
+//load controllers
+var loginController = require('./controllers/login.js');
+var chatController = require('./controllers/chat.js');
 
 //load auth
-var mAuth = require('./middleware/auth.js');
 var auth = require('./lib/auth.js');
+
+//set up template engine for nunjucks
+nunjucks.configure('views', {
+    autoescape: true,
+    express: app
+});
 
 //set public directory for static files (css,js)
 app.use(serveStatic('public', { 'index': false }));
@@ -24,39 +33,23 @@ app.use(session({
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-app.use(auth.checkLogin());
+app.use(auth.onMiddleware());
 
-//set up template engine for nunjucks
-nunjucks.configure('views', {
-    autoescape: true,
-    express: app
-});
 
 //---------------routing-----------------
 app.get('/', function(req, res) {
-    // res.render('main.html', { name: 'hungtp', age: '25' });
     res.redirect('/login');
 });
-app.get('/register', function(req, res) {
-    res.render('register.html');
-});
-app.get('/login', function(req, res) {
-    res.render('login.html');
-});
-app.post('/login', function(req, res) {
-    console.log(req.body);
-    if (!req.body) return res.sendStatus(400);
-	var getUser = auth.login(req.body.username, req.body.password);
-    if (getUser !== false) {
-    	req.session.user = getUser;
-    	res.send('welcome, ' + getUser.name);
-    } else {
-    	res.redirect('/login');
-    }
-});
-app.get('/main', function(req, res) {
-    res.render('chat_room.html');
-});
+
+app.get('/register', loginController.showRegister);
+app.post('/register', loginController.doRegister);
+
+app.get('/login', loginController.showLogin);
+app.post('/login', loginController.doLogin);
+
+app.post('/logout', loginController.doLogout);
+
+app.get('/main', chatController.show);
 
 //handling socket.io
 // io.on('connection', function(socket) {
