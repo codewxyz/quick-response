@@ -4,7 +4,16 @@ var nunjucks = require('nunjucks');
 // var io = require('socket.io')(http);
 var serveStatic = require('serve-static');//get static file
 var bodyParser = require('body-parser');//read data from post method
-var session = require('express-session');
+var session = require('express-session')({ 
+    secret: 'mT7vzH7des',  
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 360000 }
+});
+var sharedsession = require("express-socket.io-session")(
+    session, {
+    autoSave:true
+});
 var qrs = require('./lib/qr_service.js')(http);
 
 global.auth = require('./lib/auth.js')({
@@ -19,7 +28,7 @@ global.qrService = qrs;
 global.system = {
 	setting: 'test'
 };
-// console.log(global.auth.test());
+// console.log(session);
 
 //load models
 // var users = require('./models/users.js');
@@ -40,12 +49,7 @@ nunjucks.configure('views', {
 
 //set public directory for static files (css,js)
 app.use(serveStatic('public', { 'index': false }));
-app.use(session({ 
-	secret: 'mT7vzH7des',  
-	resave: false,
-  	saveUninitialized: false,
-	cookie: { maxAge: 360000 }
-}));
+app.use(session);
 app.use(bodyParser.urlencoded({
     extended: true
 }));
@@ -67,7 +71,7 @@ app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
 
-qrs.connect();
+qrs.connect(sharedsession);
 
 //handling socket.io
 // io.on('connection', function(socket) {

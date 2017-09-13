@@ -123,6 +123,8 @@ $(function() {
                     </td> \
                     </tr>';
         $('.chatbody table').append(temp);
+        // document.getElementById('scroll').scrollTop = message.offsetHeight + message.offsetTop; 
+        $('.chatbody').animate({ scrollTop: $('.chatbody table').height() }, 1000);
     }
 
     $('#do-logout').on('click', function () {
