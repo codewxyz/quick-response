@@ -1,8 +1,8 @@
-var users = [];
+var chat = [];
 
-users.push({name: 'Hung Tran', username: 'hungtp', password: '123456'});
-users.push({name: 'Hai Nguyen', username: 'haind', password: '123456'});
-users.push({name: 'Giang Trang', username: 'giangtp', password: '123456'});
+chat.push({
+	id: 'room_01',
+});
 
 //export to outside
 exports.list = () => users;

@@ -1,10 +1,25 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var nunjucks = require('nunjucks');
-var io = require('socket.io')(http);
+// var io = require('socket.io')(http);
 var serveStatic = require('serve-static');//get static file
 var bodyParser = require('body-parser');//read data from post method
 var session = require('express-session');
+var qrs = require('./lib/qr_service.js')(http);
+
+global.auth = require('./lib/auth.js')({
+	model: __dirname + '/models/users.js',
+	modelFunc: 'getByUsername'
+});
+global.myserver = {
+	node: http,
+	express: app
+};
+global.qrService = qrs;
+global.system = {
+	setting: 'test'
+};
+// console.log(global.auth.test());
 
 //load models
 // var users = require('./models/users.js');
@@ -14,7 +29,8 @@ var loginController = require('./controllers/login.js');
 var chatController = require('./controllers/chat.js');
 
 //load auth
-var auth = require('./lib/auth.js');
+// var auth = require('./lib/auth.js')();
+// console.log(auth);
 
 //set up template engine for nunjucks
 nunjucks.configure('views', {
@@ -25,15 +41,15 @@ nunjucks.configure('views', {
 //set public directory for static files (css,js)
 app.use(serveStatic('public', { 'index': false }));
 app.use(session({ 
-	secret: 'qr app',  
+	secret: 'mT7vzH7des',  
 	resave: false,
   	saveUninitialized: false,
-	cookie: { maxAge: 60000 }
+	cookie: { maxAge: 360000 }
 }));
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-app.use(auth.onMiddleware());
+app.use(global.auth.onMiddleware());
 
 
 //---------------routing-----------------
@@ -50,6 +66,8 @@ app.post('/login', loginController.doLogin);
 app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
+
+qrs.connect();
 
 //handling socket.io
 // io.on('connection', function(socket) {

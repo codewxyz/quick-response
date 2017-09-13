@@ -101,16 +101,29 @@
 <script>
 
 $(function() {
-    var socket = io('/ttm-chat');
-    $('#fm123').submit(function() {
-        socket.emit('chat message', $('#username').val() + '::' + $('#msg').val());
-        $('#msg').val('');
+    var socket = io();
+    $('.btn-chat-submit').on('click', function() {
+        socket.emit('global room msg', $('.input-chat-msg').val());
+        $('.input-chat-msg').val('');
         return false;
     });
-    socket.on('chat message', function(msg) {
-        console.log('tinh tinh msg');
-        $('#messages').append($('<li>').text(msg));
+    socket.on('global room msg', function(msg) {
+        insertChat(msg);
     });
+
+    function insertChat(obj) {
+        var temp = '<tr> \
+                    <td class="avatar"><img src="./images/default-user.png" /></td> \
+                    <td class="display-msg"> \
+                    <p>'+obj.user+' '+obj.time+'</p> \
+                    <p>'+obj.msg+'</p> \
+                    </td></td> \
+                    <td class="msg-info"> \
+                        Opts \
+                    </td> \
+                    </tr>';
+        $('.chatbody table').append(temp);
+    }
 
     $('#do-logout').on('click', function () {
         $('#fm-logout').submit();

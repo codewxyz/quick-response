@@ -1,7 +1,6 @@
+var auth = global.auth;
+
 exports.show = (req, res) => {
-	var loginUser = {
-		name: req.session.user.name,
-		username: req.session.user.name
-	};
+	var loginUser = auth.getUser(req);
     res.render('chat_room.html', {user: loginUser});
 };
