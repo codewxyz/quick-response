@@ -14,7 +14,7 @@ var sharedsession = require("express-socket.io-session")(
     session, {
     autoSave:true
 });
-var qrs = require('./lib/qr_service.js')(http);
+var qrs = require('./lib/qr_service.js')(http, sharedsession);
 
 global.auth = require('./lib/auth.js')({
 	model: __dirname + '/models/users.js',
@@ -58,7 +58,11 @@ app.use(global.auth.onMiddleware());
 
 //---------------routing-----------------
 app.get('/', function(req, res) {
-    res.redirect('/login');
+    if (global.auth.isAuthenticated(req)) {
+    	res.redirect('/main');
+    } else {
+    	res.redirect('/login');
+    }
 });
 
 app.get('/register', loginController.showRegister);
@@ -71,7 +75,7 @@ app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
 
-qrs.connect(sharedsession);
+qrs.connect();
 
 //handling socket.io
 // io.on('connection', function(socket) {

@@ -1,7 +1,10 @@
 var chat = [];
 
 chat.push({
-	id: 'room_01',
+	id: 0,
+	chat_room_id: 0,
+	msg: 'hello',
+	user_id: 'hungtp'
 });
 
 //export to outside
@@ -14,6 +17,6 @@ exports.getBy = (value, col) => {
 	}
 	return false;
 }
-exports.getByUsername = (value) => {
+exports.getByOrg = (value) => {
 	return exports.getBy(value, 'username');
 }
