@@ -37,10 +37,6 @@ global.system = {
 var loginController = require('./controllers/login.js');
 var chatController = require('./controllers/chat.js');
 
-//load auth
-// var auth = require('./lib/auth.js')();
-// console.log(auth);
-
 //set up template engine for nunjucks
 nunjucks.configure('views', {
     autoescape: true,
@@ -76,38 +72,6 @@ app.post('/logout', loginController.doLogout);
 app.get('/main', chatController.show);
 
 qrs.connect();
-
-//handling socket.io
-// io.on('connection', function(socket) {
-//     console.log('a user connected 1');
-
-//     socket.on('disconnect', function() {
-//         console.log('user disconnected');
-//     });
-//     socket.on('chat message', function(msg) {
-//         console.log(msg);
-//         io.emit('chat message', msg);
-//     });
-// })
-
-//socket for ttm
-// var ttm = io.of('/ttm-chat');
-// ttm.on('connection', function(socket) {
-//     console.log('someone connected to ttm');
-//     socket.join('tinh tinh', () => {
-//         let rooms = Object.keys(socket.rooms);
-//         console.log(rooms); // [ <socket.id>, 'room 237' ]
-//     });
-
-//     socket.in('tinh tinh').on('chat message', function(msg) {
-//         console.log('ttm room tinh tinh ' + msg);
-//         ttm.in('tinh tinh').emit('chat message', msg);
-//     });
-
-//     console.log('socket id ' + socket.id);
-//     console.log('rooms ');
-//     console.log(socket.rooms);
-// });
 
 if (!module.parent) {
 	//server listen

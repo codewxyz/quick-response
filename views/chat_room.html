@@ -88,54 +88,65 @@
 <form id="fm-logout" action="/logout" method="post" class="invisible">
 </form>
 <input type="hidden" id="user" value="{{ user.username }}">
-{% endblock %}
+
+<div class="bg-waitting">
+    <div class="cssload-preloader">
+    <div class="cssload-preloader-box">
+        <div>L</div>
+        <div>o</div>
+        <div>a</div>
+        <div>d</div>
+        <div>i</div>
+        <div>n</div>
+        <div>g</div>
+    </div>
+    </div>
+</div>
+    {% endblock %}
 
 {% block script %}
 <!-- socket.io for client side -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+
 <script>
 
-$(function() {
+(function($) {
     var user = $('#user').val();
     var rooms = [];
     var curRoom = '';
+
     var divRooms = $('div[id^="qr-m-"');
     for (var i = 0; i < divRooms.length; i++) {
         rooms.push($(divRooms[i]).attr('id').split('qr-m-')[1]);
     }
     console.log(rooms);
-
     //connect global channel
     var socket = io();
+
     $('.btn-chat-submit').on('click', function() {
         // socket.emit('global room msg', $('.input-chat-msg').val());
         sendMsg(socket, curRoom);
         $('.input-chat-msg').val('');
         return false;
     });
-    socket.on('chat message', function(msg) {
-        insertChat(msg);
-    });
+    connectRoom(socket, curRoom);
 
     //connect current org channel
     var socket2 = io('/ttm');
+    connectRoom(socket2, curRoom);
 
-    for (var idx in rooms) {
-        connectRoom(socket2, rooms[idx]);
-    }
+    $('#do-logout').on('click', function () {
+        $('#fm-logout').submit();
+    });
 
     function connectRoom(sk, room) {        
-        sk.in(room).on('chat message', function(msg) {
+        sk.on('chat message', function(msg) {
             insertChat(msg);
         });
     }
 
-    function sendMsg(socket, room='') {
-        if(room == '') {
-            socket.emit('chat message', $('.input-chat-msg').val());
-        } else {
-            socket.in(room).emit('chat message', $('.input-chat-msg').val());
-        }
+    function sendMsg(sk, room='') {
+        sk.emit('chat message', $('.input-chat-msg').val());
     }
 
     function insertChat(obj) {
@@ -158,9 +169,13 @@ $(function() {
         $('.chatbody').animate({ scrollTop: $('.chatbody table').height() }, 1000);
     }
 
-    $('#do-logout').on('click', function () {
-        $('#fm-logout').submit();
-    });
-});
+    function hideBg() {
+        $('.bg-waitting').css('display', 'none');
+    }
+
+    //after all is prepared, display the page
+    setTimeout(hideBg, 2000);
+})(jQuery);
+
 </script>
 {% endblock %}
