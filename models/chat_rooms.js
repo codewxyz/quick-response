@@ -12,6 +12,12 @@ chatRooms.push({
 	code: 'public_room_01',
 	name: 'ODC'
 });
+chatRooms.push({
+	id: 2,
+	ns: 'GB',
+	code: 'gb_request_room',
+	name: 'QR Feedback/Request'
+});
 
 //export to outside
 exports.list = () => chatRooms;

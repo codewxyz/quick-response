@@ -51,6 +51,10 @@ body {
   text-overflow: ellipsis;
   overflow: hidden;
 }
+
+.lastmsg span {
+	color: red;
+}
 .avatar {
   width: 50px;
 }

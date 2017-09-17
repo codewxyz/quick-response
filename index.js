@@ -71,7 +71,7 @@ app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
 
-qrs.connect();
+// qrs.connect();
 
 if (!module.parent) {
 	//server listen

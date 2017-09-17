@@ -1,6 +1,19 @@
 {% extends "layout.html" %} 
 
 {% block content %}
+<div class="bg-waitting">
+    <div class="cssload-preloader">
+    <div class="cssload-preloader-box">
+        <div>L</div>
+        <div>o</div>
+        <div>a</div>
+        <div>d</div>
+        <div>i</div>
+        <div>n</div>
+        <div>g</div>
+    </div>
+    </div>
+</div>
 <div class="row">
     <div class="col-sm-12">
         <nav class="navbar navbar-default">
@@ -37,25 +50,34 @@
 </div>
 <div class="row">
     <div class="col-sm-4">
+    <a href="javascript:void(0)" class="chatperson chat-active">
+        <span class="chatimg">
+            <img src="./images/room-public.png" alt="chat-room" />
+        </span>
+        <div class="namechat" id="qr-w-room">
+            <div class="pname">World Room</div>
+            <div class="lastmsg">Online: <span>5</span></div>
+        </div>
+    </a>
     {% for room in gRooms %}
-        <a href="?msg=15" class="chatperson chat-active">
+        <a href="javascript:void(0)" class="chatperson">
             <span class="chatimg">
                 <img src="./images/room-public.png" alt="chat-room" />
             </span>
             <div class="namechat" id="qr-g-{{ room.code }}">
                 <div class="pname">{{ room.name }}</div>
-                <div class="lastmsg">test</div>
+                <div class="lastmsg">Online: <span>5</span></div>
             </div>
         </a>
     {% endfor %}
     {% for room in rooms %}
-        <a href="?msg=15" class="chatperson chat-active">
+        <a href="javascript:void(0)" class="chatperson">
             <span class="chatimg">
                 <img src="./images/room-public.png" alt="chat-room" />
             </span>
             <div class="namechat" id="qr-m-{{ room.code }}">
                 <div class="pname">{{ room.name }}</div>
-                <div class="lastmsg">test</div>
+                <div class="lastmsg">Online: <span>0</span></div>
             </div>
         </a>
     {% endfor %}
@@ -63,6 +85,7 @@
     <div class="col-sm-8">
         <div class="chatbody">
             <table class="table">
+                <tbody>
                 <!-- <tr>
                     <td class="avatar avatar-me"><img src="http://via.placeholder.com/50x50?text=A" /></td>
                     <td class="display-msg">
@@ -73,11 +96,12 @@
                         Opts
                     </td>
                 </tr> -->
+                </tbody>
             </table>
         </div>
         <div class="row">
             <div class="col-sm-10 col-xs-9">
-                <textarea class="form-control input-chat-msg" placeholder="Input message here..." autofocus="true"></textarea>
+                <textarea class="form-control input-chat-msg" placeholder="Input message here..." autofocus="true" required="true"></textarea>
             </div>
             <div class="col-sm-2 col-xs-3">
                 <button class="btn btn-info btn-block btn-chat-submit">Send</button>
@@ -89,93 +113,12 @@
 </form>
 <input type="hidden" id="user" value="{{ user.username }}">
 
-<div class="bg-waitting">
-    <div class="cssload-preloader">
-    <div class="cssload-preloader-box">
-        <div>L</div>
-        <div>o</div>
-        <div>a</div>
-        <div>d</div>
-        <div>i</div>
-        <div>n</div>
-        <div>g</div>
-    </div>
-    </div>
-</div>
     {% endblock %}
 
 {% block script %}
 <!-- socket.io for client side -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
-
-<script>
-
-(function($) {
-    var user = $('#user').val();
-    var rooms = [];
-    var curRoom = '';
-
-    var divRooms = $('div[id^="qr-m-"');
-    for (var i = 0; i < divRooms.length; i++) {
-        rooms.push($(divRooms[i]).attr('id').split('qr-m-')[1]);
-    }
-    console.log(rooms);
-    //connect global channel
-    var socket = io();
-
-    $('.btn-chat-submit').on('click', function() {
-        // socket.emit('global room msg', $('.input-chat-msg').val());
-        sendMsg(socket, curRoom);
-        $('.input-chat-msg').val('');
-        return false;
-    });
-    connectRoom(socket, curRoom);
-
-    //connect current org channel
-    var socket2 = io('/ttm');
-    connectRoom(socket2, curRoom);
-
-    $('#do-logout').on('click', function () {
-        $('#fm-logout').submit();
-    });
-
-    function connectRoom(sk, room) {        
-        sk.on('chat message', function(msg) {
-            insertChat(msg);
-        });
-    }
-
-    function sendMsg(sk, room='') {
-        sk.emit('chat message', $('.input-chat-msg').val());
-    }
-
-    function insertChat(obj) {
-        var selfClass = '';
-        if (user == obj.user) {
-            selfClass = 'avatar-me';
-        }
-        var temp = '<tr> \
-                    <td class="avatar '+selfClass+'"><img src="./images/default-user.png" /></td> \
-                    <td class="display-msg"> \
-                    <p>'+obj.user+' '+obj.time+'</p> \
-                    <p>'+obj.msg+'</p> \
-                    </td></td> \
-                    <td class="msg-info"> \
-                        Opts \
-                    </td> \
-                    </tr>';
-        $('.chatbody table').append(temp);
-        // document.getElementById('scroll').scrollTop = message.offsetHeight + message.offsetTop; 
-        $('.chatbody').animate({ scrollTop: $('.chatbody table').height() }, 1000);
-    }
-
-    function hideBg() {
-        $('.bg-waitting').css('display', 'none');
-    }
-
-    //after all is prepared, display the page
-    setTimeout(hideBg, 2000);
-})(jQuery);
-
-</script>
+<script src="/js/qrservice.js"></script>
+<script src="/js/qrs.js"></script>
+<script src="/js/main.js"></script>
 {% endblock %}
