@@ -5,21 +5,33 @@
     var socketOrg = io('/ttm');
     var socketGB = io('/GB');
 
+    var qrsEvents = {
+        message: 'chat message',
+        count_online: 'count user online',
+        buzz: 'chat buzz'
+    }
+    var alertMsg = {
+        change_room_err: 'Cannot change room.',
+        validate_err_01: 'Please input message first.'
+    };
+    var selectorList = {
+        chat_container_inner: '.chatbody table tbody',
+        chat_container: '.chatbody',
+        input_msg: '.input-chat-msg'
+    };
+
     var worldRoom = 'room';
     var user = $('#user').val();
-    var rooms = [];
     var curRoom = worldRoom;
     var curSocket = socket;
     var chatContent = {};
-    console.log(chatContent);
+
     connectRooms();
-    console.log(chatContent);
 
     //send message to server
     $('.btn-chat-submit').on('click', function() {
-        // socket.emit('global room msg', $('.input-chat-msg').val());
         sendMsg(curSocket, curRoom);
-        $('.input-chat-msg').val('');
+        $(selectorList.input_msg).val('');
         return false;
     });
 
@@ -42,7 +54,7 @@
                 curSocket = socketOrg;
                 break;
             default:
-                alert('change room error');
+                alert(alertMsg.change_room_err);
                 location.href = '/';
                 break;
         }
@@ -53,21 +65,23 @@
         $(this).addClass('chat-active');
     });
 
+    //validate input and send to server
     function sendMsg(sk, room) {
-        var content = $('.input-chat-msg').val(); 
-        var roomEvent = room == worldRoom ? 'chat message' : room + '::' + 'chat message';
+        var content = $(selectorList.input_msg).val(); 
+        var roomEvent = createChatEvent(room, qrsEvents.message);
         if (content == '') {
-            alert('Please input message first!');
+            alert(alertMsg.validate_err_01);
             return;
         }
         var msgObj = {
-            content: $('.input-chat-msg').val(),
+            content: $(selectorList.input_msg).val(),
             room: room
         };
         sk.emit(roomEvent, msgObj);
-        $('.input-chat-msg').focus();
+        $(selectorList.input_msg).focus();
     }
 
+    //receive message and display/store to target room
     function insertChat(obj, room) {
         var selfClass = '';
         if (user == obj.user) {
@@ -86,9 +100,9 @@
 
         //check to store or display this message                    
         if (room == curRoom) {
-            $('.chatbody table tbody').append(temp);
-            // document.getElementById('scroll').scrollTop = message.offsetHeight + message.offsetTop; 
-            $('.chatbody').animate({ scrollTop: $('.chatbody table').height() }, 1000);
+            $(selectorList.chat_container_inner).append(temp);
+            //auto scroll to newest message on screen
+            $(selectorList.chat_container).animate({ scrollTop: $(selectorList.chat_container_inner).height() }, 1000);
         } else {
             if (chatContent[room] != undefined) {
                 chatContent[room] += temp;
@@ -102,6 +116,7 @@
         return msg.replace(/\n/gi, "<br/>");
     }
 
+    //init run, connect to all room user has access
     function connectRooms() {
         var divRooms = $('div[id^="qr-"]');
         for (var i = 0; i < divRooms.length; i++) {
@@ -112,17 +127,18 @@
             switch (getTxt.slice(0, 2)) {
                 case 'w-':
                     connectRoom(socket, worldRoom);
-                    chatContent[worldRoom] = $('.chatbody table tbody').html();
+                    eventCountOnline(socket, worldRoom, divRooms[i])
+                    chatContent[worldRoom] = $(selectorList.chat_container_inner).html();
                     break;
                 case 'g-':
-                    // rooms.push(getTxt.replace('g-',''));
                     connectRoom(socketGB, getTxt.replace('g-',''));
-                    chatContent[getTxt.replace('g-','')] = $('.chatbody table tbody').html();
+                    eventCountOnline(socket, getTxt.replace('g-',''), divRooms[i]);
+                    chatContent[getTxt.replace('g-','')] = $(selectorList.chat_container_inner).html();
                     break;
                 case 'm-':
-                    // rooms.push(getTxt.replace('m-',''));
                     connectRoom(socketOrg, getTxt.replace('m-',''));
-                    chatContent[getTxt.replace('m-','')] = $('.chatbody table tbody').html();
+                    eventCountOnline(socket, getTxt.replace('m-',''), divRooms[i]);
+                    chatContent[getTxt.replace('m-','')] = $(selectorList.chat_container_inner).html();
                     break;
                 default:
                     break;
@@ -130,22 +146,34 @@
         }
     }
 
+    //listen on event of each room
     function connectRoom(sk, room) {        
-        var roomEvent = room == worldRoom ? 'chat message' : room + '::' + 'chat message';
+        var roomEvent = createChatEvent(room, qrsEvents.message);
         sk.on(roomEvent, function(msg) {
             insertChat(msg, room);
         });
     }
 
+    //get chat event code
+    function createChatEvent(room, txtEvent) {
+        return room == worldRoom ? txtEvent : room + '::' + txtEvent;
+    }
+
     function loadNewChatContent(old) {
         //store current chat room content
-        chatContent[old] = $('.chatbody table tbody').html();
-        console.log(old);
+        chatContent[old] = $(selectorList.chat_container_inner).html();
         //get selected chat room content if exist & display
         if (chatContent[curRoom] != undefined) {
-            $('.chatbody table tbody').html(chatContent[curRoom]);
+            $(selectorList.chat_container_inner).html(chatContent[curRoom]);
         } else {
-            $('.chatbody table tbody').html('');
+            $(selectorList.chat_container_inner).html('');
         }
+    }
+
+    function eventCountOnline(sk, room, e) {
+        var roomEvent = createChatEvent(room, qrsEvents.count_online);
+        sk.on(roomEvent, function(msg) {
+            $(e).find('.lastmsg span').html(msg.count);
+        });
     }
 })(jQuery);
