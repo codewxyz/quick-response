@@ -67,6 +67,7 @@
 
     //validate input and send to server
     function sendMsg(sk, room) {
+        console.log(curSocket);
         var content = $(selectorList.input_msg).val(); 
         var roomEvent = createChatEvent(room, qrsEvents.message);
         if (content == '') {
@@ -75,7 +76,8 @@
         }
         var msgObj = {
             content: $(selectorList.input_msg).val(),
-            room: room
+            room: room,
+            ns: curSocket.nsp
         };
         sk.emit(roomEvent, msgObj);
         $(selectorList.input_msg).focus();
@@ -88,9 +90,9 @@
             selfClass = 'avatar-me';
         }
         var temp = '<tr> \
-                    <td class="avatar '+selfClass+'"><img src="/images/default-user.png" /></td> \
+                    <td class="avatar '+selfClass+'"><img src="'+obj.avatar+'" /></td> \
                     <td class="display-msg"> \
-                    <p class="display-msg-header">'+obj.user+' '+obj.time+'</p> \
+                    <p class="display-msg-header">'+obj.name+' '+obj.time+'</p> \
                     <p class="display-msg-content">'+formatMsg(obj.msg)+'</p> \
                     </td></td> \
                     <td class="msg-info"> \

@@ -1,8 +1,17 @@
 var users = [];
 
-users.push({name: 'Hung Tran', username: 'hungtp', password: '123456'});
-users.push({name: 'Hai Nguyen', username: 'haind', password: '123456'});
-users.push({name: 'Giang Trang', username: 'giangtp', password: '123456'});
+users.push({id: 0, name: 'Hung Tran', username: 'hungtp', 
+	avatar: 'https://cdn4.iconfinder.com/data/icons/space-and-astronomy-1/800/rocket-512.png', 
+	password: '123456', status: 0, devices: []});
+users.push({id: 1, name: 'Hai Nguyen', username: 'haind', 
+	avatar: '/images/default-user.png', 
+	password: '123456', status: 0, devices: []});
+users.push({id: 2, name: 'Giang Tran', username: 'giangtp', 
+	avatar: '/images/default-user.png', 
+	password: '123456', status: 0, devices: []});
+users.push({id: 3, name: 'Phuong Nguyen', username: 'phuongnt', 
+	avatar: '/images/default-user.png', 
+	password: '123456', status: 0, devices: []});
 
 //export to outside
 exports.list = () => users;

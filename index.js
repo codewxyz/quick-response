@@ -4,18 +4,39 @@ var nunjucks = require('nunjucks');
 // var io = require('socket.io')(http);
 var serveStatic = require('serve-static');//get static file
 var bodyParser = require('body-parser');//read data from post method
-var session = require('express-session')({ 
+var redis = require('redis');
+var moment = require('moment');
+
+//--------------------SESSION FOR APP---------------
+var session = require('express-session');
+var redisStore = require('connect-redis')(session);
+session = session({ 
     secret: 'mT7vzH7des',  
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 360000 }
+    cookie: { maxAge: 360000 },
+    store: new redisStore({
+        host: '127.0.0.1',
+        port: '6379',
+        prefix: 'qrs-session:'
+    })
 });
+
+//session for use in socket.io
 var sharedsession = require("express-socket.io-session")(
     session, {
     autoSave:true
 });
-var qrs = require('./lib/qr_service.js')(http, sharedsession);
 
+//--------------GLOBAL VAR DECLARATION-----------------
+global.qrsLog = function() {
+    console.log('-----------System Log: '+moment().format('HH:mm:ss')+'-----------');
+    for (var idx in arguments) {
+        console.log(arguments[idx]);
+    }
+    console.log('-----------System Log End.----------------\n');
+    
+};
 global.auth = require('./lib/auth.js')({
 	model: __dirname + '/models/users.js',
 	modelFunc: 'getByUsername'
@@ -24,16 +45,30 @@ global.myserver = {
 	node: http,
 	express: app
 };
-global.qrService = qrs;
 global.system = {
 	setting: 'test'
 };
-// console.log(session);
+global.dbRedis = {
+    socket: redis.createClient({
+        prefix: 'qrs-socket-io:'
+    })
+};
+dbRedis.socket.on('connect', (err) => {
+    qrsLog('Redis connected');
+});
+dbRedis.socket.on('end', (err) => {
+    qrsLog('Redis connection ended:', err);
+});
+dbRedis.socket.on('error', (err) => {
+    qrsLog('Redis error:', err);
+});
 
+var qrs = require('./lib/qr_service.js')(http, sharedsession);
+global.qrService = qrs;
 //load models
 // var users = require('./models/users.js');
 
-//load controllers
+//----------------LOAD CONTROLLERS----------------------
 var loginController = require('./controllers/login.js');
 var chatController = require('./controllers/chat.js');
 
@@ -43,6 +78,7 @@ nunjucks.configure('views', {
     express: app
 });
 
+//----------------LOAD MIDDLEWARE TO APP------------------
 //set public directory for static files (css,js)
 app.use(serveStatic('public', { 'index': false }));
 app.use(session);
@@ -52,7 +88,7 @@ app.use(bodyParser.urlencoded({
 app.use(global.auth.onMiddleware());
 
 
-//---------------routing-----------------
+//---------------ROUTING-----------------
 app.get('/', function(req, res) {
     if (global.auth.isAuthenticated(req)) {
     	res.redirect('/main');
@@ -71,8 +107,8 @@ app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
 
-// qrs.connect();
 
+//------------------STARTUP THE APP SERVER----------
 if (!module.parent) {
 	//server listen
 	http.listen(3000, function() {
