@@ -50,34 +50,37 @@
 </div>
 <div class="row">
     <div class="col-sm-4">
-    <a href="javascript:void(0)" class="chatperson chat-active">
+    <a href="javascript:void(0)" class="chat-room chat-active" id="r-room"
+     data-room="room" data-ns="W">
         <span class="chatimg">
-            <img src="./images/room-public.png" alt="chat-room" />
+            <img src="./images/room-public.png" alt="chat-room-icon" />
         </span>
-        <div class="namechat" id="qr-w-room">
-            <div class="pname">World Room</div>
-            <div class="lastmsg">Online: <span>0</span></div>
+        <div class="chat-room-info">
+            <div class="chat-room-name">World Room</div>
+            <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
         </div>
     </a>
     {% for room in gRooms %}
-        <a href="javascript:void(0)" class="chatperson">
+        <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
+         data-room="{{ room.code }}" data-ns="{{ room.ns }}">
             <span class="chatimg">
-                <img src="./images/room-public.png" alt="chat-room" />
+                <img src="./images/room-public.png" alt="chat-room-icon" />
             </span>
-            <div class="namechat" id="qr-g-{{ room.code }}">
-                <div class="pname">{{ room.name }}</div>
-                <div class="lastmsg">Online: <span>0</span></div>
+            <div class="chat-room-info">
+                <div class="chat-room-name">{{ room.name }}</div>
+                <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
             </div>
         </a>
     {% endfor %}
     {% for room in rooms %}
-        <a href="javascript:void(0)" class="chatperson">
+        <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
+         data-room="{{ room.code }}" data-ns="{{ room.ns }}">
             <span class="chatimg">
-                <img src="./images/room-public.png" alt="chat-room" />
+                <img src="./images/room-public.png" alt="chat-room-icon" />
             </span>
-            <div class="namechat" id="qr-m-{{ room.code }}">
-                <div class="pname">{{ room.name }}</div>
-                <div class="lastmsg">Online: <span>0</span></div>
+            <div class="chat-room-info">
+                <div class="chat-room-name">{{ room.name }}</div>
+                <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
             </div>
         </a>
     {% endfor %}
@@ -103,7 +106,7 @@
             <div class="col-sm-10 col-xs-9">
                 <textarea class="form-control input-chat-msg" placeholder="Input message here..." autofocus="true" required="true"></textarea>
             </div>
-            <div class="col-sm-2 col-xs-3">
+            <div class="col-sm-2 col-xs-3" style="padding-left: 0;">
                 <button class="btn btn-info btn-block btn-chat-submit">Send</button>
             </div>
         </div>

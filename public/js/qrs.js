@@ -2,8 +2,12 @@
     //connect global channel
     var socket = io();
     //connect current org channel
-    var socketOrg = io('/ttm');
-    var socketGB = io('/GB');
+    var socketNs = {
+        GB: io('/GB'),
+        ttm: io('/ttm')
+    }
+    // var socketNs.ttm = io('/ttm');
+    // var socketNs.GB = io('/GB');
 
     var qrsEvents = {
         message: 'chat message',
@@ -36,33 +40,24 @@
     });
 
     //change chat room
-    $('.chatperson').on('click', function () {
+    $('.chat-room').on('click', function () {
         var oldRoom = curRoom;
-        var getTxt = $(this).find('.namechat').attr('id').split('qr-')[1];
+        var getNs = $(this).data('ns');
+        var getRoom = $(this).data('room');
 
-        switch (getTxt.slice(0, 2)) {
-            case 'w-':
-                curRoom = worldRoom;
-                curSocket = socket;
-                break;
-            case 'g-':
-                curRoom = getTxt.replace('g-','');
-                curSocket = socketGB;
-                break;
-            case 'm-':
-                curRoom = getTxt.replace('m-','');
-                curSocket = socketOrg;
-                break;
-            default:
-                alert(alertMsg.change_room_err);
-                location.href = '/';
-                break;
+        if (getNs == 'W') {
+            curRoom = worldRoom;
+            curSocket = socket;
+        } else {
+            curRoom = getRoom;
+            curSocket = socketNs[getNs];
         }
 
         loadNewChatContent(oldRoom);
 
         $('.chat-active').removeClass('chat-active');
         $(this).addClass('chat-active');
+        $('#r-'+curRoom).find('.chat-room-unread').html('');
     });
 
     //validate input and send to server
@@ -94,9 +89,6 @@
                     <td class="display-msg"> \
                     <p class="display-msg-header">'+obj.name+' '+obj.time+'</p> \
                     <p class="display-msg-content">'+formatMsg(obj.msg)+'</p> \
-                    </td></td> \
-                    <td class="msg-info"> \
-                        Opts \
                     </td> \
                     </tr>';
 
@@ -111,6 +103,10 @@
             } else {
                 chatContent[room] = temp;
             }
+
+            var unreadhHtml = $('#r-'+room).find('.chat-room-unread').html();
+            console.log(room);
+            $('#r-'+room).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml)+1);
         }
     }
 
@@ -120,31 +116,21 @@
 
     //init run, connect to all room user has access
     function connectRooms() {
-        var divRooms = $('div[id^="qr-"]');
+        var divRooms = $('.chat-room');
         for (var i = 0; i < divRooms.length; i++) {
         
-            var getTxt = $(divRooms[i]).attr('id').split('qr-')[1];
-            console.log(getTxt);
+            var getNs = $(divRooms[i]).data('ns');
+            var getRoom = $(divRooms[i]).data('room');
 
-            switch (getTxt.slice(0, 2)) {
-                case 'w-':
-                    connectRoom(socket, worldRoom);
-                    eventCountOnline(socket, worldRoom, divRooms[i])
-                    chatContent[worldRoom] = $(selectorList.chat_container_inner).html();
-                    break;
-                case 'g-':
-                    connectRoom(socketGB, getTxt.replace('g-',''));
-                    eventCountOnline(socket, getTxt.replace('g-',''), divRooms[i]);
-                    chatContent[getTxt.replace('g-','')] = $(selectorList.chat_container_inner).html();
-                    break;
-                case 'm-':
-                    connectRoom(socketOrg, getTxt.replace('m-',''));
-                    eventCountOnline(socket, getTxt.replace('m-',''), divRooms[i]);
-                    chatContent[getTxt.replace('m-','')] = $(selectorList.chat_container_inner).html();
-                    break;
-                default:
-                    break;
+            if (getNs == 'W') {
+                connectRoom(socket, worldRoom);
+                // eventCountOnline(socket, worldRoom);
+                chatContent[worldRoom] = $(selectorList.chat_container_inner).html();
+            } else {
+                connectRoom(socketNs[getNs], getRoom);
+                chatContent[getRoom] = $(selectorList.chat_container_inner).html();
             }
+            eventCountOnline(socket, getRoom);
         }
     }
 
@@ -172,10 +158,10 @@
         }
     }
 
-    function eventCountOnline(sk, room, e) {
+    function eventCountOnline(sk, room) {
         var roomEvent = createChatEvent(room, qrsEvents.count_online);
         sk.on(roomEvent, function(msg) {
-            $(e).find('.lastmsg span').html(msg.count);
+            $('#r-'+room).find('.chat-room-online').html(msg.count);
         });
     }
 })(jQuery);

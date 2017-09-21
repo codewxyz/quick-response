@@ -4,7 +4,6 @@ var nunjucks = require('nunjucks');
 // var io = require('socket.io')(http);
 var serveStatic = require('serve-static');//get static file
 var bodyParser = require('body-parser');//read data from post method
-var redis = require('redis');
 var moment = require('moment');
 
 //--------------------SESSION FOR APP---------------
@@ -48,20 +47,6 @@ global.myserver = {
 global.system = {
 	setting: 'test'
 };
-global.dbRedis = {
-    socket: redis.createClient({
-        prefix: 'qrs-socket-io:'
-    })
-};
-dbRedis.socket.on('connect', (err) => {
-    qrsLog('Redis connected');
-});
-dbRedis.socket.on('end', (err) => {
-    qrsLog('Redis connection ended:', err);
-});
-dbRedis.socket.on('error', (err) => {
-    qrsLog('Redis error:', err);
-});
 
 var qrs = require('./lib/qr_service.js')(http, sharedsession);
 global.qrService = qrs;

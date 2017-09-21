@@ -9,6 +9,5 @@ exports.show = (req, res) => {
 	var loginUser = auth.getUser(req);
 	var chatRooms = getRooms('ttm');
 	var globalRooms = getRooms('GB');
-	global.qrService.connect();
     res.render('chat_room.html', {user: loginUser, rooms: chatRooms, gRooms: globalRooms});
 };

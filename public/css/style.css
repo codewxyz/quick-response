@@ -8,7 +8,7 @@ body {
   box-shadow: 3px 6px 12px gray
 }
 
-.chatperson{
+.chat-room{
   display: block;
   border: 2px solid lightgray;
   /*border-right: 4px solid #99ccff;*/
@@ -22,7 +22,7 @@ body {
   background-color: whitesmoke;
   color: black;
 }
-.chatperson:hover{
+.chat-room:hover, .chat-room:focus{
   text-decoration: none;
   border-right: 4px solid #99ccff;
   color: black;
@@ -30,30 +30,34 @@ body {
 .chat-active {
   border-right: 4px solid #99ccff;
 }
-.namechat {
+.chat-room-info {
     display: inline-block;
     vertical-align: middle;
     padding-right: 40px;
     width: 100%;
 }
-.chatperson .chatimg img{
+.chat-room .chatimg img{
   width: 40px;
   height: 40px;
   border: 2px solid lightslategrey;
 }
-.chatperson .pname{
+.chat-room .chat-room-name{
   font-size: 18px;
   padding-left: 5px;
 }
-.chatperson .lastmsg{
+.chat-room .chat-room-status{
   font-size: 12px;
   padding-left: 5px;
   text-overflow: ellipsis;
   overflow: hidden;
 }
 
-.lastmsg span {
+.chat-room-online {
 	color: red;
+}
+.chat-room-unread {
+	color: white;
+	background-color: #58BAC1;
 }
 .avatar {
   width: 50px;
