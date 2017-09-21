@@ -1,3 +1,4 @@
+var db = require('../lib/db.js')('users');
 var users = [];
 
 users.push({id: 0, name: 'Hung Tran', username: 'hungtp', 
@@ -14,6 +15,21 @@ users.push({id: 3, name: 'Phuong Nguyen', username: 'phuongnt',
 	password: '123456', status: 0, devices: []});
 
 //export to outside
+// module.exports = () => {
+
+// }
+
+exports.create = (value, callback='') => {
+	var obj = {
+		id: 0, 
+		name: 'Hung Tran', 
+		username: 'hungtp', 
+		avatar: 'https://cdn4.iconfinder.com/data/icons/space-and-astronomy-1/800/rocket-512.png', 
+		password: '123456'
+	};
+
+	db.create('hmset', obj, callback);
+}
 exports.list = () => users;
 exports.get = (id) => users[id];
 exports.getBy = (value, col) => {
