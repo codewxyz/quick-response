@@ -1,5 +1,15 @@
 var db = require('../lib/db.js')('users');
 var users = [];
+var primaryKey = 'username';
+
+//format for a user record
+// var obj = {
+// 	name: 'Hung Tran', 
+// 	username: 'hungtp', 
+// 	avatar: 'https://cdn4.iconfinder.com/data/icons/space-and-astronomy-1/800/rocket-512.png', 
+// 	password: '123456',
+// 	email: 'hungtp@abc.co'
+// };
 
 users.push({id: 0, name: 'Hung Tran', username: 'hungtp', 
 	avatar: 'https://cdn4.iconfinder.com/data/icons/space-and-astronomy-1/800/rocket-512.png', 
@@ -19,19 +29,21 @@ users.push({id: 3, name: 'Phuong Nguyen', username: 'phuongnt',
 
 // }
 
-exports.create = (value, callback='') => {
-	var obj = {
-		id: 0, 
-		name: 'Hung Tran', 
-		username: 'hungtp', 
-		avatar: 'https://cdn4.iconfinder.com/data/icons/space-and-astronomy-1/800/rocket-512.png', 
-		password: '123456'
-	};
-
-	db.create('hmset', obj, callback);
+exports.create = (vals, callback='') => {
+	db.hset('hmset', vals[primaryKey], vals, callback);
 }
-exports.list = () => users;
-exports.get = (id) => users[id];
+exports.exists = (vals, callback='') => {
+	db.exists(vals, callback);
+}
+
+exports.list = (callback='') => {
+	db.all(callback);
+};
+
+exports.get = (val, callback='') => {
+	db.hgetall(val, callback)
+};
+
 exports.getBy = (value, col) => {
 	for (var idx in users) {
 		if (users[idx][col] == value)

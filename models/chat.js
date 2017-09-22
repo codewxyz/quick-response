@@ -5,6 +5,7 @@ chat.push({
 	chat_room_id: 0,
 	msg: 'hello',
 	user_id: 'hungtp'
+	time: 1125441,
 });
 
 //export to outside

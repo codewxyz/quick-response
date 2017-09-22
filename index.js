@@ -28,7 +28,7 @@ var sharedsession = require("express-socket.io-session")(
 });
 
 //--------------GLOBAL VAR DECLARATION-----------------
-global.qrsLog = function() {
+global.qrLog = function() {
     console.log('-----------System Log: '+moment().format('HH:mm:ss')+'-----------');
     for (var idx in arguments) {
         console.log(arguments[idx]);
@@ -38,7 +38,7 @@ global.qrsLog = function() {
 };
 global.auth = require('./lib/auth.js')({
 	model: __dirname + '/models/users.js',
-	modelFunc: 'getByUsername'
+	modelFunc: 'get'
 });
 global.myserver = {
 	node: http,

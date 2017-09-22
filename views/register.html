@@ -5,21 +5,29 @@
 <div class="row">
     <div class="col-lg-4 col-lg-offset-4 col-sm-6 col-sm-offset-3 col-xs-12 form-container">
         <p style="color: red;">{{ msg }}</p>
-        <form method="post" action="/register">
+        <form method="post" action="/register" id="fm-register">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username">Username <span style="color: red;">*</span></label>
                 <input type="text" class="form-control" id="username" placeholder="Username" name="username">
             </div>            
             <div class="form-group">
                 <label for="name">Full Name</label>
                 <input type="text" class="form-control" id="name" placeholder="name" name="name">
+            </div>        
+            <div class="form-group">
+                <label for="avatar">Avatar (URL of image)</label>
+                <input type="text" class="form-control" id="avatar" placeholder="avatar" name="avatar">
+            </div>        
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="text" class="form-control" id="email" placeholder="email" name="email">
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Password <span style="color: red;">*</span></label>
                 <input type="password" class="form-control" id="password" placeholder="Password" name="password">
             </div>
             <div class="form-group">
-                <label for="password">Re-enter Password</label>
+                <label for="password">Re-enter Password <span style="color: red;">*</span></label>
                 <input type="password" class="form-control" id="password" placeholder="Password" name="password2">
             </div>
             <button type="submit" class="btn btn-default">Register</button>
