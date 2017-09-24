@@ -48,21 +48,21 @@ function register(param, res) {
     if (param.avatar == '') {
         param.avatar = '/images/default-user.png';
     }
-    logger(param);
+    delete param.password2;
+
     usersModel.exists(param.username, (err, rep) => {
-        logger(param.username, err, rep);
+        logger(param, err, rep);
         if (rep == 0) {
-            res.redirect('/register?error=0');
-            // usersModel.create(param, (err2, rep2) => {
-            //     logger('create user', err, rep);
-            //     if (rep2 == 0) {
-            //         res.redirect('/register?error=0');
-            //     } else {    
-            //         res.redirect('/register?success=1');
-            //     }
-            // });
+            usersModel.create(param, (err2, rep2) => {
+                logger('create user', err2, rep2);
+                if (rep2 == 'OK') {
+                    return res.redirect('/register?success=1');
+                } else {    
+                    return res.redirect('/register?error=0');
+                }
+            });
         } else {
-            res.redirect('/register?error=4');
+            return res.redirect('/register?error=4');
         }
     });
 }

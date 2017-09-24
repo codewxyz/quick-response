@@ -82,12 +82,13 @@
     function insertChat(obj, room) {
         var selfClass = '';
         if (user == obj.user) {
-            selfClass = 'avatar-me';
+            selfClass = ['my-avatar', 'my-msg'];
         }
         var temp = '<tr> \
-                    <td class="avatar '+selfClass+'"><img src="'+obj.avatar+'" /></td> \
-                    <td class="display-msg"> \
-                    <p class="display-msg-header">'+obj.name+' '+obj.time+'</p> \
+                    <td class="avatar '+selfClass[0]+'"><img src="'+obj.avatar+'" alt="avatar"/></td> \
+                    <td class="display-msg '+selfClass[1]+'"> \
+                    <p class="display-msg-header"><span class="display-msg-header-username">'+obj.name+'</span> '+
+                    '<span class="display-msg-header-time">'+obj.time+'</span></p> \
                     <p class="display-msg-content">'+formatMsg(obj.msg)+'</p> \
                     </td> \
                     </tr>';

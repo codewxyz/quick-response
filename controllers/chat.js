@@ -1,13 +1,23 @@
 var auth = global.auth;
-var chatRoomModel = require('../models/chat_rooms.js');
+var models = global.models;
+var logger = global.qrLog;
 
 function getRooms(org) {
-	return chatRoomModel.getByOrg(org);
+    return chatRoomModel.getByOrg(org);
 }
 
 exports.show = (req, res) => {
-	var loginUser = auth.getUser(req);
-	var chatRooms = getRooms('ttm');
-	var globalRooms = getRooms('GB');
-    res.render('chat_room.html', {user: loginUser, rooms: chatRooms, gRooms: globalRooms});
+    var user = auth.getUser(req);
+    var chatRooms = [];
+
+    //get list chat room user can access
+    models.rooms_users.search('*' + user.username, (err, rooms) => {
+        for (var i in rooms) {
+        	models.rooms.get(rooms[i], (room) => {
+        		chatRooms.push(room);
+        	});
+        }
+    });
+
+    res.render('chat_room.html', { user: user, rooms: chatRooms });
 };

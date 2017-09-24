@@ -66,12 +66,22 @@ body {
   width: 50px;
   height: 50px;
   border: 2px solid lightslategrey;  
+  border-radius: 20px;
 }
 
-.avatar-me img{
+.my-avatar img{
   border: 2px solid lightseagreen;
 }
 
+.my-msg .display-msg-header-username {
+	color: cadetblue;
+}
+.display-msg-header-username {
+	font-weight: bold;
+}
+.display-msg-header-time {
+	font-size: 0.8em;
+}
 .chatbody {
   padding: 15px;
   margin-bottom: 20px;

@@ -36,10 +36,6 @@ global.qrLog = function() {
     console.log('-----------System Log End.----------------\n');
     
 };
-global.auth = require('./lib/auth.js')({
-	model: __dirname + '/models/users.js',
-	modelFunc: 'get'
-});
 global.myserver = {
 	node: http,
 	express: app
@@ -48,14 +44,26 @@ global.system = {
 	setting: 'test'
 };
 
+//load models
+global.models = {
+    users: new (require('./models/users.js')),
+    rooms: new (require('./models/rooms.js')),
+    orgs: new (require('./models/organizations.js')),
+    orgs_rooms: new (require('./models/orgs_rooms.js')),
+    orgs_users: new (require('./models/orgs_users.js')),
+    rooms_users: new (require('./models/rooms_users.js')),
+    chats: new (require('./models/chats.js'))
+};
+global.auth = require('./lib/auth.js')({
+    model: models.users,
+    modelFunc: 'get'
+});
 var qrs = require('./lib/qr_service.js')(http, sharedsession);
 global.qrService = qrs;
-//load models
-// var users = require('./models/users.js');
-
 //----------------LOAD CONTROLLERS----------------------
 var loginController = require('./controllers/login.js');
 var chatController = require('./controllers/chat.js');
+var adminController = require('./controllers/admin.js');
 
 //set up template engine for nunjucks
 nunjucks.configure('views', {
@@ -91,6 +99,9 @@ app.post('/login', loginController.doLogin);
 app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
+app.get('/admin', adminController.show);
+app.post('/admin/add/org', adminController.addOrg);
+app.get('/admin/add/room', adminController.addRoom);
 
 
 //------------------STARTUP THE APP SERVER----------
