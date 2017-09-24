@@ -1,56 +1,29 @@
-var db = require('../lib/db.js')('users');
-var users = [];
-var primaryKey = 'username';
-
 //format for a user record
 // var obj = {
+// 	username: 'hungtp', --primary key
 // 	name: 'Hung Tran', 
-// 	username: 'hungtp', 
 // 	avatar: 'https://cdn4.iconfinder.com/data/icons/space-and-astronomy-1/800/rocket-512.png', 
 // 	password: '123456',
-// 	email: 'hungtp@abc.co'
+// 	email: 'hungtp@abc.co',
+// 	role: member,
+// 	created_at: '15012456',
+// 	created_by: 'userA',
+// 	updated_at: '15012456',
+// 	updated_by: 'userA',
+// 	last_login: '1504216',
 // };
 
-users.push({id: 0, name: 'Hung Tran', username: 'hungtp', 
-	avatar: 'https://cdn4.iconfinder.com/data/icons/space-and-astronomy-1/800/rocket-512.png', 
-	password: '123456', status: 0, devices: []});
-users.push({id: 1, name: 'Hai Nguyen', username: 'haind', 
-	avatar: '/images/default-user.png', 
-	password: '123456', status: 0, devices: []});
-users.push({id: 2, name: 'Giang Tran', username: 'giangtp', 
-	avatar: '/images/default-user.png', 
-	password: '123456', status: 0, devices: []});
-users.push({id: 3, name: 'Phuong Nguyen', username: 'phuongnt', 
-	avatar: '/images/default-user.png', 
-	password: '123456', status: 0, devices: []});
+delete require.cache[require.resolve('./BaseModel.js')];
+var BaseModel = require('./BaseModel.js');
+var util = require('util');
+var logger = global.qrLog;
 
-//export to outside
-// module.exports = () => {
+function UsersModel() {
+    BaseModel.apply(this, ['users']);
+    this.setPK('username');
 
-// }
-
-exports.create = (vals, callback='') => {
-	db.hset('hmset', vals[primaryKey], vals, callback);
-}
-exports.exists = (vals, callback='') => {
-	db.exists(vals, callback);
 }
 
-exports.list = (callback='') => {
-	db.all(callback);
-};
+util.inherits(UsersModel, BaseModel);
 
-exports.get = (val, callback='') => {
-	db.hgetall(val, callback)
-};
-
-exports.getBy = (value, col) => {
-	for (var idx in users) {
-		if (users[idx][col] == value)
-			return users[idx];
-	}
-	return false;
-}
-exports.getByUsername = (value) => {
-	return exports.getBy(value, 'username');
-}
+module.exports = UsersModel;
