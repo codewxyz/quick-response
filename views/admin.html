@@ -1,19 +1,6 @@
 {% extends "layout.html" %} 
 
 {% block content %}
-<div class="bg-waitting">
-    <div class="cssload-preloader">
-    <div class="cssload-preloader-box">
-        <div>L</div>
-        <div>o</div>
-        <div>a</div>
-        <div>d</div>
-        <div>i</div>
-        <div>n</div>
-        <div>g</div>
-    </div>
-    </div>
-</div>
 <div class="row">
     <div class="col-sm-12">
         <nav class="navbar navbar-default">
@@ -34,13 +21,11 @@
                 <!-- Collect the nav links, forms, and other content for toggling -->
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav">
-                        <li class="active"><a href="javascript:void(0)">Home <span class="sr-only">(current)</span></a></li>
+                        <li><a href="/">Home <span class="sr-only">(current)</span></a></li>
                         <li><a href="javascript:void(0)">Welcome, {{ user.name }}</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
-                        {% if (user.role == 'admin') %}
-                        <li><a href="/admin">Management</a></li>
-                        {% endif %}
+                        <li class="active"><a href="javascript:void(0)">Management</a></li>
                         <li><a href="javascript:void(0)">Setting</a></li>
                         <li><a href="javascript:void(0)" id="do-logout">Logout</a></li>
                     </ul>
@@ -53,44 +38,44 @@
 </div>
 <div class="row">
     <div class="col-sm-4">
-    <a href="javascript:void(0)" class="chat-room chat-active" id="r-room"
-     data-room="room" data-ns="W">
+    <a href="javascript:void(0)" class="chat-room chat-active" id="a-user"
+     data-gtype="users">
         <span class="chatimg">
-            <img src="./images/room-public.png" alt="chat-room-icon" />
+            <img src="./images/setting.png" alt="chat-room-icon" />
         </span>
         <div class="chat-room-info">
-            <div class="chat-room-name">World Room</div>
-            <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
+            <div class="chat-room-name">User List</div>
+            <div class="chat-room-status">Management of user</div>
         </div>
     </a>
-    {% for room in gRooms %}
-        <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
-         data-room="{{ room.code }}" data-ns="{{ room.ns }}">
-            <span class="chatimg">
-                <img src="./images/room-public.png" alt="chat-room-icon" />
-            </span>
-            <div class="chat-room-info">
-                <div class="chat-room-name">{{ room.name }}</div>
-                <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
-            </div>
-        </a>
-    {% endfor %}
-    {% for room in rooms %}
-        <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
-         data-room="{{ room.code }}" data-ns="{{ room.ns }}">
-            <span class="chatimg">
-                <img src="./images/room-public.png" alt="chat-room-icon" />
-            </span>
-            <div class="chat-room-info">
-                <div class="chat-room-name">{{ room.name }}</div>
-                <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
-            </div>
-        </a>
-    {% endfor %}
+    <a href="javascript:void(0)" class="chat-room" id="a-org"
+     data-gtype="orgs">
+        <span class="chatimg">
+            <img src="./images/setting.png" alt="chat-room-icon" />
+        </span>
+        <div class="chat-room-info">
+            <div class="chat-room-name">Organization List</div>
+            <div class="chat-room-status">Management of room</div>
+        </div>
+    </a>
+    <a href="javascript:void(0)" class="chat-room" id="a-room"
+     data-gtype="rooms">
+        <span class="chatimg">
+            <img src="./images/setting.png" alt="chat-room-icon" />
+        </span>
+        <div class="chat-room-info">
+            <div class="chat-room-name">Room List</div>
+            <div class="chat-room-status">Management of organization</div>
+        </div>
+    </a>
     </div>
     <div class="col-sm-8">
         <div class="chatbody">
-            <table class="table">
+            <div class="chatbody-loading">
+                <i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
+                <span class="sr-only">Loading...</span>
+            </div>
+            <table class="table" style="display: none;">
                 <tbody>
                 <!-- <tr>
                     <td class="avatar avatar-me"><img src="http://via.placeholder.com/50x50?text=A" /></td>
@@ -106,25 +91,130 @@
             </table>
         </div>
         <div class="row">
-            <div class="col-sm-10 col-xs-9">
-                <textarea class="form-control input-chat-msg" placeholder="Input message here..." autofocus="true" required="true"></textarea>
-            </div>
-            <div class="col-sm-2 col-xs-3" style="padding-left: 0;">
-                <button class="btn btn-info btn-block btn-chat-submit">Send</button>
-            </div>
+            <button type="button" class="btn btn-default new-record"><i class="fa fa-plus"></i> New</button>
         </div>
     </div>
 </div>
+
 <form id="fm-logout" action="/logout" method="post" class="invisible">
 </form>
 <input type="hidden" id="user" value="{{ user.username }}">
 
-    {% endblock %}
+<!-- Modal -->
+<div class="modal fade" id="qr-modal-form" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Create</h4>
+      </div>
+      <div class="modal-body">
+        <form id="fm-create-orgs" class="hide">
+            <div class="form-group">
+                <label for="fm-org-code">Code</label>
+                <input type="text" class="form-control" id="fm-org-code" placeholder="Code">
+            </div>
+            <div class="form-group">
+                <label for="fm-org-name">Name</label>
+                <input type="text" class="form-control" id="fm-org-name" placeholder="Name">
+            </div>
+        </form>
+        <form id="fm-create-rooms" class="hide">
+            <div class="form-group">
+                <label for="fm-room-code">Code</label>
+                <input type="text" class="form-control" id="fm-room-code" placeholder="Code">
+            </div>
+            <div class="form-group">
+                <label for="fm-room-name">Name</label>
+                <input type="text" class="form-control" id="fm-room-name" placeholder="Name">
+            </div>
+            <div class="form-group">
+                <label for="fm-room-org">Organization</label>
+                <select id="fm-room-org" class="form-control">
+                </select>
+            </div>
+        </form>
+        <form id="fm-create-users" class="hide">
+            <div class="form-group">
+                <label for="fm-user-username">Username <span style="color: red;">*</span></label>
+                <input type="text" class="form-control" id="fm-user-username" placeholder="Username" name="username">
+            </div>            
+            <div class="form-group">
+                <label for="fm-user-name">Full Name</label>
+                <input type="text" class="form-control" id="fm-user-name" placeholder="name" name="name">
+            </div>              
+            <div class="form-group">
+                <label for="fm-user-role">Role</label>
+                <select id="fm-user-role" class="form-control">
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>      
+            <div class="form-group">
+                <label for="fm-user-avatar">Avatar (URL of image)</label>
+                <input type="text" class="form-control" id="fm-user-avatar" placeholder="avatar" name="avatar">
+            </div>        
+            <div class="form-group">
+                <label for="fm-user-email">Email</label>
+                <input type="text" class="form-control" id="fm-user-email" placeholder="email" name="email">
+            </div>
+            <div class="form-group">
+                <label for="fm-user-password">Password <span style="color: red;">*</span></label>
+                <input type="password" class="form-control" id="fm-user-password" placeholder="Password" name="password">
+            </div>
+            <div class="form-group">
+                <label for="fm-user-password2">Re-enter Password <span style="color: red;">*</span></label>
+                <input type="password" class="form-control" id="fm-user-password2" placeholder="Password" name="password2">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary btn-fm-submit">Create</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="qr-fm-search" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Add</h4>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="qr-alert" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Notification</h4>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
 
 {% block script %}
 <!-- socket.io for client side -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
 <script src="/js/qrservice.js"></script>
-<script src="/js/qrs.js"></script>
 <script src="/js/main.js"></script>
+<script src="/js/admin.js"></script>
 {% endblock %}

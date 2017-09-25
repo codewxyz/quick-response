@@ -99,9 +99,14 @@ app.post('/login', loginController.doLogin);
 app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
+
 app.get('/admin', adminController.show);
-app.post('/admin/add/org', adminController.addOrg);
-app.get('/admin/add/room', adminController.addRoom);
+app.get('/admin/get/users', adminController.getUsers);
+app.get('/admin/get/orgs', adminController.getOrgs);
+app.get('/admin/get/rooms', adminController.getRooms);
+app.post('/admin/set/org', adminController.addOrg);
+app.post('/admin/set/room', adminController.addRoom);
+app.post('/admin/set/user', adminController.addUser);
 
 
 //------------------STARTUP THE APP SERVER----------
@@ -110,4 +115,27 @@ if (!module.parent) {
 	http.listen(3000, function() {
 	    console.log('server listening on *:3000');
 	});	
+
+    initServer();
+}
+
+function initServer() {
+    //create default admin if not exist
+    models.users.get('admin', (user) => {
+        if (user == null) {
+            var obj = {
+                username: 'admin',
+                name: 'Administrator',
+                avatar: './images/admin-user.png',
+                email: 'admin@qr.com',
+                password: 'admin',
+                role: 'admin'
+            };
+            models.users.create(obj, (rep) => {
+                if (rep != null) {
+                    qrLog('admin user created');
+                }
+            });
+        }
+    })
 }

@@ -13,6 +13,8 @@ function BaseModel() {
 
     connect();
 
+    this.test = () => table;
+
     this.setPK = (key) => {
         primaryKey = key;
     }
@@ -90,6 +92,7 @@ function connect() {
 
 function dset(command, id, vals, callback = '') {
     var arr = [];
+    logger(command,id,vals);
     var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
     if (typeof(vals) == 'object' && !Array.isArray(vals)) {
         for (var i in vals) {
@@ -113,6 +116,7 @@ function dset(command, id, vals, callback = '') {
 
 function hgetall(id, callback = '') {
     var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+    logger(key);
     if (callback == '') {
         db.hgetall(key);
     } else {
@@ -148,8 +152,7 @@ function search(pattern, callback = '') {
 }
 
 function checkKey(key) {
-	var prefix = redisPrefix+table;
-	return (key.indexOf(prefix) == 0);
+	return (key.indexOf(redisPrefix) == 0);
 }
 
 /**

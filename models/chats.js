@@ -4,6 +4,7 @@
 // 	data: ['json msg']
 // };
 
+delete require.cache[require.resolve('./BaseModel.js')];
 var BaseModel = require('./BaseModel.js');
 var util = require('util');
 var logger = global.qrLog;
