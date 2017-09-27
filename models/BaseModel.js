@@ -19,6 +19,26 @@ function BaseModel() {
         primaryKey = key;
     }
 
+    this.multi = (commands, callback) => {
+        if (!Array.isArray(commands)) {
+            throw 'Command in multi function have to be an array.';
+        }
+
+        var commandList = [];
+
+        for (var i in commands) {
+            commandList.push(prepareMulti(commands[i]));
+        }
+        var multi = db.multi(commandList);
+
+        multi.exec((err, reps) => {
+            if (err) {
+                throw err;
+            }
+            callback(reps);
+        });
+    }
+
     this.create = (vals, callback = '') => {
     	vals = prepareData(vals);
         switch (storeType) {
@@ -125,6 +145,22 @@ function hgetall(id, callback = '') {
             callback(rep);
         });
     }
+}
+
+
+function prepareMulti(vals) {
+    var args = [];
+    switch (vals[0]) {
+        case 'hgetall':
+            var id = vals[1];
+            var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+            args.push(key);
+            break;
+        default:
+            break;
+    }
+
+    return [vals[0]].concat(args);
 }
 
 function all(callback = '') {

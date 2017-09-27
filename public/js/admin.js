@@ -47,6 +47,10 @@
         setData(getType);
     });
 
+    $('.btn-sub-action').on('click', function() {
+
+    });
+
     function getSelectOrg() {
         $.ajax({
             url: ajaxGetData.orgs.urlget,
@@ -91,6 +95,11 @@
                     <td class="display-msg"> \
                     <p>' + user.username + '</p> \
                     <p>Role: ' + user.role + '</p> \
+                    <p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action" \
+                    title="view details" \
+                    data-code="'+user.username+'"><i class="fa fa-eye"></i></button> \
+                    <button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this user" \
+                    data-code="'+user.username+'"><i class="fa fa-pencil"></i></button></p> \
                     </td> \
                     </tr>';
         $('.chatbody table tbody').append(temp);
@@ -100,12 +109,13 @@
         var temp = '<tr> \
                     <td class="avatar"><img src="./images/logo.png" /></td> \
                     <td class="display-msg"> \
-                    <p>' + org.name + 
-                    '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="add user to this organization" \
-                    data-orgcode="'+org.code+'"><i class="fa fa-user"></i></button> \
+                    <p>' + org.name + '</p> \
+                    <p>Code: ' + org.code + '</p>\
+                    <p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action" \
+                    title="add user to this organization" \
+                    data-code="'+org.code+'"><i class="fa fa-user"></i></button> \
                     <button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this organization" \
-                    data-orgcode="'+org.code+'"><i class="fa fa-pencil"></i></button></p> \
-                    <p>Code: ' + org.code + '</p> \
+                    data-code="'+org.code+'"><i class="fa fa-pencil"></i></button></p> \
                     </td> \
                     </tr>';
         $('.chatbody table tbody').append(temp);
@@ -117,6 +127,11 @@
                     <td class="display-msg"> \
                     <p>' + room.name + '</p> \
                     <p>Code: ' + room.code + '</p> \
+                    <p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action" \
+                    title="add user to this room" \
+                    data-code="'+room.code+'"><i class="fa fa-user"></i></button> \
+                    <button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this room" \
+                    data-code="'+room.code+'"><i class="fa fa-pencil"></i></button></p> \
                     </td> \
                     </tr>';
         $('.chatbody table tbody').append(temp);
@@ -194,6 +209,9 @@
             success: function(result, status, xhr) {
                 console.log(status);
                 console.log(xhr);
+                if (xhr.statusCode().search('302') > -1) {
+                	location.href = location.href;
+                }
                 if (result != undefined && result.length > 0) {
                     for (var i in result) {
                         ajaxGetData[type]['handle'](result[i]);

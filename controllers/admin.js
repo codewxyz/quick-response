@@ -16,14 +16,20 @@ exports.getUsers = (req, res) => {
         if (total == 0) {
             return res.json(null);
         }
+        var commands = [];
         for (var i in users) {
-            models.users.get(users[i], (user) => {
-                usersList.push(user);
-                total--;
-                if (total == 0) {
-                     return res.json(usersList);
-                }
+            commands.push(['hgetall', users[i]]);
+            models.users.multi(commands, (users) => {
+                logger('multi command', users);
+                 return res.json(users);
             });
+            // models.users.get(users[i], (user) => {
+            //     usersList.push(user);
+            //     total--;
+            //     if (total == 0) {
+            //          return res.json(usersList);
+            //     }
+            // });
         }
     });
 

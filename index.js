@@ -52,7 +52,8 @@ global.models = {
     orgs_rooms: new (require('./models/orgs_rooms.js')),
     orgs_users: new (require('./models/orgs_users.js')),
     rooms_users: new (require('./models/rooms_users.js')),
-    chats: new (require('./models/chats.js'))
+    chats: new (require('./models/chats.js')),
+    lists: new (require('./models/lists.js'))
 };
 global.auth = require('./lib/auth.js')({
     model: models.users,
