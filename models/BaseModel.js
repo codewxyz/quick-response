@@ -13,11 +13,11 @@ function BaseModel() {
 
     connect();
 
-    this.test = () => table;
-
     this.setPK = (key) => {
         primaryKey = key;
     }
+
+    this.getKey = (id) => getKey(id);
 
     this.redis = () => db;
 
@@ -31,9 +31,8 @@ function BaseModel() {
         for (var i in commands) {
             commandList.push(prepareMulti(commands[i]));
         }
-        var multi = db.multi(commandList);
-
-        multi.exec((err, reps) => {
+        logger(commandList);
+        var multi = db.multi(commandList).exec((err, reps) => {
             if (!isTerminate) {
                 return callback(err, reps);
             }
@@ -55,9 +54,8 @@ function BaseModel() {
         for (var i in commands) {
             commandList.push(prepareMulti(commands[i]));
         }
-        var multi = db.batch(commandList);
-
-        multi.exec((err, reps) => {
+        logger(commandList);
+        var multi = db.batch(commandList).exec((err, reps) => {
             if (!isTerminate) {
                 return callback(err, reps);
             }
@@ -108,7 +106,9 @@ function BaseModel() {
 
 module.exports = BaseModel;
 
-
+function getKey(id) {
+    return checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+}
 function prepareData(data) {
     switch (storeType) {
         case 'hash':
@@ -143,7 +143,7 @@ function connect() {
 function dset(command, id, vals, callback = '') {
     var arr = [];
     logger(command,id,vals);
-    var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+    var key = getKey(id);
     if (typeof(vals) == 'object' && !Array.isArray(vals)) {
         for (var i in vals) {
             arr.push(i);
@@ -165,7 +165,7 @@ function dset(command, id, vals, callback = '') {
 }
 
 function hgetall(id, callback = '') {
-    var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+    var key = getKey(id);
     logger(key);
     if (callback == '') {
         db.hgetall(key);
@@ -182,36 +182,30 @@ function prepareMulti(vals) {
     var args = [];
     switch (vals[0]) {
         case 'hgetall':
-            var id = vals[1];
-            var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
-            args.push(key);
+            args.push(getKey(vals[1]));
             break;
         case 'hmset':
-            var id = vals[1].username;
-            var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+            var obj = vals[2];
             var arr = [];
-            if (typeof(vals[1]) == 'object' && !Array.isArray(vals[1])) {
-                for (var i in vals[1]) {
+            if (typeof(obj) == 'object' && !Array.isArray(obj)) {
+                for (var i in obj) {
                     arr.push(i);
-                    arr.push(vals[1][i]);
+                    arr.push(obj[i]);
                 }
             } else {
-                arr = vals[1];
+                arr = obj;
             }
-            args.push(key);
+            args.push(getKey(vals[1]));
             args.push(arr);
             break;
         case 'sadd':
-            var id = vals[1];
-            var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
-            args.push(key);
+            args.push(getKey(vals[1]));
             args.push(vals[2]);;
             break;
 
         default:
             break;
     }
-    logger([vals[0]].concat(args));
 
     return [vals[0]].concat(args);
 }
@@ -253,7 +247,7 @@ function checkKey(key) {
  * @return {void}          [description]
  */
 exports.exists = (id, callback = '') => {
-    var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+    var key = getKey(id);
     if (callback == '') {
         db.exists(key);
     } else {

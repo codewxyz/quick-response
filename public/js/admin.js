@@ -51,34 +51,6 @@
 
     });
 
-    function getSelectOrg() {
-        $.ajax({
-            url: ajaxGetData.orgs.urlget,
-            type: 'get',
-            complete: function(xhr, status) {
-                console.log(xhr);
-                console.log(status);
-                if (status == 'error') {
-                    $('#qr-alert .modal-body').html('Error getting Organization data.');
-                    $('#qr-alert').modal('show');
-                }
-            },
-            success: function(result, status, xhr) {
-                console.log(status);
-                console.log(xhr);
-                if (result != undefined && result.length > 0) {
-                    var selectHtml = '';
-                    for (var i in result) {
-                        selectHtml += '<option value="' + result[i].code + '">' + result[i].name + '</option>';
-                    }
-                    $('#fm-room-org').html(selectHtml);
-                } else {
-                    $('#fm-room-org').html('<option value="">No data found</option>');
-                }
-            }
-        });
-    }
-
     function hideLoading() {
         $('.chatbody-loading').css('display', 'none');
         $('.chatbody table').css('display', 'inline-block');
@@ -169,9 +141,9 @@
             url: ajaxGetData[type].urlset,
             type: 'post',
             data: data,
+            dataType: 'json',
             complete: function(xhr, status) {
                 console.log(xhr);
-                console.log(status);
                 if (status == 'error') {
                     $('#qr-alert .modal-body').html('Error creating data.');
                     $('#qr-alert').modal('show');
@@ -179,10 +151,9 @@
                 $('#qr-modal-form').modal('hide');
             },
             success: function(result, status, xhr) {
-                console.log(status);
                 console.log(xhr);
-                if (xhr.status == 302) {
-                	location.href = location.href;
+                if (xhr.status == 403) {
+                	location.href = '/';
                 }
                 if (result != undefined && result.success) {
                     $('#qr-alert .modal-body').html('Created successfully.');
@@ -201,19 +172,18 @@
         $.ajax({
             url: ajaxGetData[type].urlget,
             type: 'get',
+            dataType: 'json',
             complete: function(xhr, status) {
                 console.log(xhr);
-                console.log(status);
                 if (status == 'error') {
                     $('.chatbody table tbody').html('Error loading data.');
                 }
                 setTimeout(hideLoading, 1000);
             },
             success: function(result, status, xhr) {
-                console.log(status);
                 console.log(xhr.status);
-                if (xhr.status == 302) {
-                	location.href = location.href;
+                if (xhr.status == 403) {
+                	location.href = '/';
                 }
                 if (result != undefined && result.length > 0) {
                     for (var i in result) {
@@ -221,6 +191,35 @@
                     }
                 } else {
                     $('.chatbody table tbody').html('There are no data to show.');
+                }
+            }
+        });
+    }
+    
+    function getSelectOrg() {
+        $.ajax({
+            url: ajaxGetData.orgs.urlget,
+            type: 'get',
+            complete: function(xhr, status) {
+                console.log(xhr);
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error getting Organization data.');
+                    $('#qr-alert').modal('show');
+                }
+            },
+            success: function(result, status, xhr) {
+                console.log(status);
+                if (xhr.status == 403) {
+                    location.href = '/';
+                }
+                if (result != undefined && result.length > 0) {
+                    var selectHtml = '';
+                    for (var i in result) {
+                        selectHtml += '<option value="' + result[i].code + '">' + result[i].name + '</option>';
+                    }
+                    $('#fm-room-org').html(selectHtml);
+                } else {
+                    $('#fm-room-org').html('<option value="">No data found</option>');
                 }
             }
         });

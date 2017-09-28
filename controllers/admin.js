@@ -12,22 +12,15 @@ function getRecords(type, records, res) {
     if (total == 0) {
         return res.json(null);
     }
-    var fail = 0;
     var commands = [];
     for (var i in records) {
         commands.push(['hgetall', records[i]]);
-        models[type].batch(commands, false, (err, results) => {
-            if (err) {
-                fail++;
-            }
-            total--;
-            if (total == 0) {
-                logger('get list number of fail: '+fail);
-                logger(results);
-                return res.json(results);
-            }
-        });
     }
+    logger(records);
+    models[type].batch(commands, false, (err, results) => {
+        logger('get list user count '+results.length);
+        return res.json(results);
+    });
 }
 
 exports.getUsers = (req, res) => {
@@ -37,8 +30,8 @@ exports.getUsers = (req, res) => {
         getRecords('users', users, res);
     });
 
-    // res.render('chat_room.html', { user: user, rooms: chatRooms });
 };
+
 exports.getOrgs = (req, res) => {
 
     //get list chat room user can access
@@ -46,8 +39,8 @@ exports.getOrgs = (req, res) => {
         getRecords('orgs', orgs, res);
     });
 
-    // res.render('chat_room.html', { user: user, rooms: chatRooms });
 };
+
 exports.getRooms = (req, res) => {
 
     //get list chat room user can access
@@ -55,7 +48,6 @@ exports.getRooms = (req, res) => {
         getRecords('rooms', rooms, res);
     });
 
-    // res.render('chat_room.html', { user: user, rooms: chatRooms });
 };
 
 exports.addUser = (req, res) => {
@@ -72,8 +64,8 @@ exports.addUser = (req, res) => {
     delete formParam.password2;
 
     var commands = [
-        ['hmset', formParam],
-        ['sadd', models.lists.keyGUser, formParam.username]
+        ['hmset', models.users.getKey(formParam.username), formParam],
+        ['sadd', models.lists.getKey(models.lists.keyGUser), formParam.username]
     ];
     var total = commands.length;
     models.users.multi(commands, false, (err, results) => {
@@ -82,7 +74,7 @@ exports.addUser = (req, res) => {
             throw err;
         }
         total--;
-        logger(err, results);
+        logger(err, results, total);
         if (total == 0) {
             if (results != null && results.length == commands.length) {
                 return res.json({success: true});
