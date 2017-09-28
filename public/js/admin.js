@@ -181,6 +181,9 @@
             success: function(result, status, xhr) {
                 console.log(status);
                 console.log(xhr);
+                if (xhr.status == 302) {
+                	location.href = location.href;
+                }
                 if (result != undefined && result.success) {
                     $('#qr-alert .modal-body').html('Created successfully.');
                     getData(type);
@@ -208,8 +211,8 @@
             },
             success: function(result, status, xhr) {
                 console.log(status);
-                console.log(xhr);
-                if (xhr.statusCode().search('302') > -1) {
+                console.log(xhr.status);
+                if (xhr.status == 302) {
                 	location.href = location.href;
                 }
                 if (result != undefined && result.length > 0) {

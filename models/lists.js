@@ -12,8 +12,13 @@ var logger = global.qrLog;
 function ListsModel() {
     BaseModel.apply(this, ['lists', 'set']);
 
+    this.getKeyOrg = (org, rcode) => 'orgs:'+org+':'+rcode;
+    this.getKeyUser = (org) => 'users:'+org;
+    this.getKeyRoom = (room) => 'rooms:'+room;
+    this.keyGUser = 'users:global';
+
     this.createOrgRoom = (room, callback) => {
-    	var id = 'orgs:' + room.org + ':' + room.code;
+    	var id = this.getKeyOrg(room.org, room.code);
         dset('sadd', id, room.code, callback);
     }
 
@@ -23,12 +28,12 @@ function ListsModel() {
     }
 
     this.createOrgUsers = (org, username, callback) => {
-    	var id = 'users:' + org;
+    	var id = this.getKeyUser(org);
         dset('sadd', id, username, callback);
     }  
 
     this.createRoomUsers = (room, username, callback) => {
-    	var id = 'rooms:' + room;
+    	var id = this.getKeyRoom(room);
         dset('sadd', id, username, callback);
     }
 }

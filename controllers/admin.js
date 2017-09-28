@@ -7,74 +7,52 @@ exports.show = (req, res) => {
     res.render('admin.html', { user: user });
 };
 
+function getRecords(type, records, res) {
+    var total = records.length;
+    if (total == 0) {
+        return res.json(null);
+    }
+    var fail = 0;
+    var commands = [];
+    for (var i in records) {
+        commands.push(['hgetall', records[i]]);
+        models[type].batch(commands, false, (err, results) => {
+            if (err) {
+                fail++;
+            }
+            total--;
+            if (total == 0) {
+                logger('get list number of fail: '+fail);
+                logger(results);
+                return res.json(results);
+            }
+        });
+    }
+}
+
 exports.getUsers = (req, res) => {
-    var usersList = [];
 
     //get list chat room user can access
     models.users.all((users) => {
-        var total = users.length;
-        if (total == 0) {
-            return res.json(null);
-        }
-        var commands = [];
-        for (var i in users) {
-            commands.push(['hgetall', users[i]]);
-            models.users.multi(commands, (users) => {
-                logger('multi command', users);
-                 return res.json(users);
-            });
-            // models.users.get(users[i], (user) => {
-            //     usersList.push(user);
-            //     total--;
-            //     if (total == 0) {
-            //          return res.json(usersList);
-            //     }
-            // });
-        }
+        getRecords('users', users, res);
     });
 
     // res.render('chat_room.html', { user: user, rooms: chatRooms });
 };
 exports.getOrgs = (req, res) => {
-    var orgsList = [];
 
     //get list chat room user can access
     models.orgs.all((orgs) => {
-        var total = orgs.length;
-        if (total == 0) {
-            return res.json(null);
-        }
-        for (var i in orgs) {
-            models.orgs.get(orgs[i], (org) => {
-                orgsList.push(org);
-                total--;
-                if (total == 0) {
-                     return res.json(orgsList);
-                }
-            });
-        }
+        getRecords('orgs', orgs, res);
     });
 
     // res.render('chat_room.html', { user: user, rooms: chatRooms });
 };
 exports.getRooms = (req, res) => {
-    var roomsList = [];
 
     //get list chat room user can access
     models.rooms.all((rooms) => {
-        var total = rooms.length;
-        if (total == 0) {
-            return res.json(null);
-        }
-        for (var i in rooms) {
-            models.rooms.get(rooms[i], (room) => {
-                roomsList.push(room);
-                total--;
-                if (total == 0) {
-                     return res.json(roomsList);
-                }
-            });
-        }
+        getRecords('rooms', rooms, res);
     });
 
     // res.render('chat_room.html', { user: user, rooms: chatRooms });
@@ -93,12 +71,32 @@ exports.addUser = (req, res) => {
     }
     delete formParam.password2;
 
-    models.users.create(formParam, (rep) => {
-        if (rep != null) {
-            return res.json({success: true});
+    var commands = [
+        ['hmset', formParam],
+        ['sadd', models.lists.keyGUser, formParam.username]
+    ];
+    var total = commands.length;
+    models.users.multi(commands, false, (err, results) => {
+        if (err) {
+            logger(err);
+            throw err;
         }
-        return res.json({success: false})
+        total--;
+        logger(err, results);
+        if (total == 0) {
+            if (results != null && results.length == commands.length) {
+                return res.json({success: true});
+            }
+            return res.json({success: false})
+        }
     });
+
+    // models.users.create(formParam, (rep) => {
+    //     if (rep != null) {
+    //         return res.json({success: true});
+    //     }
+    //     return res.json({success: false})
+    // });
 
 };
 
@@ -120,6 +118,21 @@ exports.addRoom = (req, res) => {
 };
 
 exports.addOrg = (req, res) => {
+    var formParam = req.body;
+    logger(formParam);
+    if (formParam.code == '' || formParam.name == '') {
+        return res.json({success: false, msg: 'Invalid data.'});
+    }
+
+    models.orgs.create(formParam, (rep) => {
+        if (rep != null) {
+            return res.json({success: true});
+        }
+        return res.json({success: false})
+    });
+};
+
+exports.addOrgUser = (req, res) => {
     var formParam = req.body;
     logger(formParam);
     if (formParam.code == '' || formParam.name == '') {

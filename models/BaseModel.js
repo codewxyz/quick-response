@@ -19,7 +19,9 @@ function BaseModel() {
         primaryKey = key;
     }
 
-    this.multi = (commands, callback) => {
+    this.redis = () => db;
+
+    this.multi = (commands, isTerminate, callback) => {
         if (!Array.isArray(commands)) {
             throw 'Command in multi function have to be an array.';
         }
@@ -32,10 +34,38 @@ function BaseModel() {
         var multi = db.multi(commandList);
 
         multi.exec((err, reps) => {
+            if (!isTerminate) {
+                return callback(err, reps);
+            }
+
             if (err) {
                 throw err;
             }
             callback(reps);
+        });
+    }
+
+    this.batch = (commands, isTerminate, callback) => {
+        if (!Array.isArray(commands)) {
+            throw 'Command in batch function have to be an array.';
+        }
+
+        var commandList = [];
+
+        for (var i in commands) {
+            commandList.push(prepareMulti(commands[i]));
+        }
+        var multi = db.batch(commandList);
+
+        multi.exec((err, reps) => {
+            if (!isTerminate) {
+                return callback(err, reps);
+            }
+
+            if (err) {
+                throw err;
+            }
+            return callback(reps);
         });
     }
 
@@ -156,9 +186,32 @@ function prepareMulti(vals) {
             var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
             args.push(key);
             break;
+        case 'hmset':
+            var id = vals[1].username;
+            var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+            var arr = [];
+            if (typeof(vals[1]) == 'object' && !Array.isArray(vals[1])) {
+                for (var i in vals[1]) {
+                    arr.push(i);
+                    arr.push(vals[1][i]);
+                }
+            } else {
+                arr = vals[1];
+            }
+            args.push(key);
+            args.push(arr);
+            break;
+        case 'sadd':
+            var id = vals[1];
+            var key = checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+            args.push(key);
+            args.push(vals[2]);;
+            break;
+
         default:
             break;
     }
+    logger([vals[0]].concat(args));
 
     return [vals[0]].concat(args);
 }
