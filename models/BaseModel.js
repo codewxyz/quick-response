@@ -17,7 +17,12 @@ function BaseModel() {
         primaryKey = key;
     }
 
-    this.getKey = (id) => getKey(id);
+    this.getKey = (id, hasPrefix=false) => {
+        if (hasPrefix)
+            return redisPrefix+getKey(id);
+        else 
+            return getKey(id);
+    };
 
     this.redis = () => db;
 
@@ -27,7 +32,6 @@ function BaseModel() {
         }
 
         var commandList = [];
-
         for (var i in commands) {
             commandList.push(prepareMulti(commands[i]));
         }
@@ -255,5 +259,22 @@ exports.exists = (id, callback = '') => {
         	if (err) throw err;
             callback(rep);
         });
+    }
+}
+
+/**
+ * check if member of set exist
+ * @param  {String} member       member value
+ * @param  {String} callback [description]
+ * @return {void}          [description]
+ */
+exports.mexists = (member, callback) => {
+    if (storeType == 'set') {
+        db.sismember(member, (err, rep) => {
+            if (err) throw err;
+            callback(rep);
+        });
+    } else {
+        throw table+' is not set type.';
     }
 }

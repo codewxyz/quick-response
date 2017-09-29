@@ -175,6 +175,9 @@
             dataType: 'json',
             complete: function(xhr, status) {
                 console.log(xhr);
+                if (xhr.status == 403) {
+                	location.href = '/';
+                }
                 if (status == 'error') {
                     $('.chatbody table tbody').html('Error loading data.');
                 }
@@ -182,9 +185,6 @@
             },
             success: function(result, status, xhr) {
                 console.log(xhr.status);
-                if (xhr.status == 403) {
-                	location.href = '/';
-                }
                 if (result != undefined && result.length > 0) {
                     for (var i in result) {
                         ajaxGetData[type]['handle'](result[i]);
@@ -202,6 +202,9 @@
             type: 'get',
             complete: function(xhr, status) {
                 console.log(xhr);
+                if (xhr.status == 403) {
+                	location.href = '/';
+                }
                 if (status == 'error') {
                     $('#qr-alert .modal-body').html('Error getting Organization data.');
                     $('#qr-alert').modal('show');
@@ -209,9 +212,6 @@
             },
             success: function(result, status, xhr) {
                 console.log(status);
-                if (xhr.status == 403) {
-                    location.href = '/';
-                }
                 if (result != undefined && result.length > 0) {
                     var selectHtml = '';
                     for (var i in result) {

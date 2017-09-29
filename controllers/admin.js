@@ -64,31 +64,16 @@ exports.addUser = (req, res) => {
     delete formParam.password2;
 
     var commands = [
-        ['hmset', models.users.getKey(formParam.username), formParam],
-        ['sadd', models.lists.getKey(models.lists.keyGUser), formParam.username]
+        ['hmset', formParam.username, formParam],
+        ['sadd', models.lists.getKey(models.lists.keyGUser, true), formParam.username]
     ];
-    var total = commands.length;
-    models.users.multi(commands, false, (err, results) => {
-        if (err) {
-            logger(err);
-            throw err;
+    models.users.multi(commands, true, (results) => {
+        logger(results);
+        if (results != null && results.length == commands.length) {
+            return res.json({success: true});
         }
-        total--;
-        logger(err, results, total);
-        if (total == 0) {
-            if (results != null && results.length == commands.length) {
-                return res.json({success: true});
-            }
-            return res.json({success: false})
-        }
+        return res.json({success: false});
     });
-
-    // models.users.create(formParam, (rep) => {
-    //     if (rep != null) {
-    //         return res.json({success: true});
-    //     }
-    //     return res.json({success: false})
-    // });
 
 };
 

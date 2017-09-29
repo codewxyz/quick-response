@@ -122,8 +122,8 @@ if (!module.parent) {
 
 function initServer() {
     //create default admin if not exist
-    models.users.get('admin', (user) => {
-        if (user == null) {
+    models.lists.mexists('admin', (user) => {
+        if (user == 0) {
             var obj = {
                 username: 'admin',
                 name: 'Administrator',
@@ -132,11 +132,22 @@ function initServer() {
                 password: 'admin',
                 role: 'admin'
             };
-            models.users.create(obj, (rep) => {
-                if (rep != null) {
+            var commands = [
+                ['hmset', obj.username, obj],
+                ['sadd', models.lists.getKey(models.lists.keyGUser, true), obj.username]
+            ];
+            models.users.multi(commands, true, (results) => {
+                logger(results);
+                if (results != null && results.length == commands.length) {
                     qrLog('admin user created');
                 }
+                qrLog('failed to create admin user');
             });
+            // models.users.create(obj, (rep) => {
+            //     if (rep != null) {
+            //         qrLog('admin user created');
+            //     }
+            // });
         }
     })
 }
