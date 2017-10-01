@@ -4,6 +4,7 @@ var table = '';
 var storeType = 'hash';
 var primaryKey = 'code';
 var logger = global.qrLog;
+var promise = global.promise;
 
 function BaseModel() {
     table = arguments[0];
@@ -15,7 +16,7 @@ function BaseModel() {
 
     this.setPK = (key) => {
         primaryKey = key;
-    }
+    };
 
     this.getKey = (id, hasPrefix=false) => {
         if (hasPrefix)
@@ -26,93 +27,229 @@ function BaseModel() {
 
     this.redis = () => db;
 
-    this.multi = (commands, isTerminate, callback) => {
-        if (!Array.isArray(commands)) {
-            throw 'Command in multi function have to be an array.';
-        }
-
+    /**
+     * perform db commands in transaction
+     * get only one result at the end
+     * @param  {Array}  commands    list of command to execute
+     * @return {Promise}              [description]
+     */
+    this.multi = (commands) => {
         var commandList = [];
+
         for (var i in commands) {
             commandList.push(prepareMulti(commands[i]));
         }
-        logger(commandList);
-        var multi = db.multi(commandList).exec((err, reps) => {
-            if (!isTerminate) {
-                return callback(err, reps);
-            }
 
-            if (err) {
-                throw err;
-            }
-            callback(reps);
-        });
-    }
+        return db.multi(commandList).execAsync();
+    };
 
-    this.batch = (commands, isTerminate, callback) => {
-        if (!Array.isArray(commands)) {
-            throw 'Command in batch function have to be an array.';
-        }
-
+    /**
+     * run multi db command at once
+     *     
+     * @param  {String} commands [description]
+     * @return {Promise}          [description]
+     */
+    this.batch = (commands) => {
         var commandList = [];
 
         for (var i in commands) {
             commandList.push(prepareMulti(commands[i]));
         }
         logger(commandList);
-        var multi = db.batch(commandList).exec((err, reps) => {
-            if (!isTerminate) {
-                return callback(err, reps);
-            }
 
-            if (err) {
-                throw err;
-            }
-            return callback(reps);
-        });
-    }
+        return db.batch(commandList).execAsync();
+    };
 
-    this.create = (vals, callback = '') => {
+    this.create = (vals) => {
     	vals = prepareData(vals);
-        switch (storeType) {
-            case 'hash':
-                dset('hmset', vals[primaryKey], vals, callback);
-                break;
-            case 'set':
-                dset('sadd', vals[primaryKey], vals['data'], callback);
-                break;
-            default:
-                // statements_def
-                break;
-        }
-    }
-    this.exists = (vals, callback = '') => {
-        exists(vals, callback);
-    }
 
-    this.list = (callback = '') => {
-        all(callback);
+        return new promise(function(resolve, reject) {
+            switch (storeType) {
+                case 'hash':
+                    var arr = [];
+                    for (var i in vals) {
+                        arr.push(i);
+                        arr.push(vals[i]);
+                    }
+                    resolve(dset('hmset', vals[primaryKey], arr));
+                    break;
+                case 'set':
+                    resolve(dset('sadd', vals[primaryKey], vals.data));
+                    break;
+                default:
+                    reject('no store type set in table '+table);
+                    break;
+            }
+
+        });
     };
 
-    this.get = (val, callback = '') => {
-        hgetall(val, callback);
+    this.exists = (vals) => {
+        return exists(vals);
     };
 
-    this.all = (callback = '') => {
-        all(callback);
+    this.mexists = (id, vals) => {
+        return mexists(id, vals);
     };
 
-    this.search = (val, callback = '') => {
-        search(val, callback);
+    // this.list = () => {
+    //     return all();
+    // };
+
+    this.get = (val) => {
+        return hgetall(val);
     };
+
+    this.all = () => {
+        return all();
+    };
+
+    this.search = (val) => {
+        return search(val.type, val);
+    };
+
+    this.count = (id, type) => {
+        return count(id, type);
+    };
+
 }
-
-// BaseModel.prototype.test = function () { console.log('hello basemodel'); return 'hah'; };
 
 module.exports = BaseModel;
 
+//----------------------------------HANDLING DB FUNCTIONS-----------------------
+//---------------------------------------------------------------------
+function connect() {
+    var redis = require('redis');
+    promise.promisifyAll(redis.RedisClient.prototype);
+    promise.promisifyAll(redis.Multi.prototype);
+    db = redis.createClient({
+        prefix: redisPrefix
+    });
+
+    db.on('connect', (err) => {
+        logger('Redis connected with ' + redisPrefix + ' on ' + table);
+    });
+
+    db.on('end', (err) => {
+        logger('Redis connection ended:', redisPrefix, table, err);
+    });
+
+    db.on('error', (err) => {
+        logger('Redis error:', redisPrefix, table, err);
+    });
+}
+
+function dset(command, id, vals) {
+    var key = getKey(id);
+    command += 'Async';
+
+    return db[command](key, vals);
+}
+
+function hgetall(id) {
+    var key = getKey(id);
+    return db.hgetallAsync(key);
+}
+
+function all() {
+    var key = redisPrefix + table + '*';
+    return db.keysAsync(key);
+}
+
+function count(id, type) {
+    var key = getKey(id);
+    logger(key, type);
+    switch (type) {
+        case 'set':
+            return db.scardAsync(key);
+        default:
+            // statements_def
+            break;
+    }
+}
+
+function search(type, val) {
+    switch (type) {
+        case 'key':
+            var pattern = redisPrefix + table + val.pattern;
+            return db.keysAsync(pattern);
+        case 'set':
+            var key = getKey(val.key);
+        logger(val);
+            return db.sscanAsync(key, 0, 'match', val.pattern, 'count', val.count);
+        default:
+            // statements_def
+            break;
+    }
+}
+
+/**
+ * check if specific key exists
+ * return 1 if exists
+ * 
+ * @param  {String} id       key to check
+ * @return {void}          [description]
+ */
+function exists(id) {
+    var key = getKey(id);
+    return db.existsAsync(key);
+}
+
+/**
+ * check if member of set exist
+ * @param  {String} member       member value
+ * @return {void}          [description]
+ */
+function mexists(id, member) {
+    return new promise(function(resolve, reject) {
+        if (storeType == 'set') {
+            resolve(db.sismemberAsync(getKey(id), member));
+        } else {
+            console.trace();
+            reject('store type is not set for table '+table);
+        }
+    });
+}
+
+// //----------------------------------SUPPORT FUNCTIONS-----------------------
+// //---------------------------------------------------------------------
 function getKey(id) {
     return checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
 }
+
+function checkKey(key) {
+    return (key.indexOf(redisPrefix) == 0);
+}
+
+function prepareMulti(vals) {
+    var args = [];
+    switch (vals[0]) {
+        case 'hgetall':
+            args.push(getKey(vals[1]));
+            break;
+        case 'hmset':
+            var obj = prepareData(vals[2]);
+            var arr = [];
+
+            for (var i in obj) {
+                arr.push(i);
+                arr.push(obj[i]);
+            }
+            args.push(getKey(vals[1]));
+            args.push(arr);
+            break;
+        case 'sadd':
+            args.push(getKey(vals[1]));
+            args.push(vals[2]);
+            break;
+
+        default:
+            break;
+    }
+
+    return [vals[0]].concat(args);
+}
+
 function prepareData(data) {
     switch (storeType) {
         case 'hash':
@@ -124,157 +261,4 @@ function prepareData(data) {
             break;
     }
     return data;
-}
-
-function connect() {
-    db = require('redis').createClient({
-        prefix: redisPrefix
-    });
-
-    db.on('connect', (err) => {
-        logger('Redis connected with ' + redisPrefix);
-    });
-
-    db.on('end', (err) => {
-        logger('Redis connection ended:', redisPrefix, err);
-    });
-
-    db.on('error', (err) => {
-        logger('Redis error:', redisPrefix, err);
-    });
-}
-
-function dset(command, id, vals, callback = '') {
-    var arr = [];
-    logger(command,id,vals);
-    var key = getKey(id);
-    if (typeof(vals) == 'object' && !Array.isArray(vals)) {
-        for (var i in vals) {
-            arr.push(i);
-            arr.push(vals[i]);
-        }
-    } else {
-        arr = vals;
-    }
-
-    if (callback == '') {
-        db[command](key, arr);
-    } else {
-        db[command](key, arr, (err, rep) => {
-        	if (err) throw err;
-            callback(rep);
-        });
-    }
-    return true;
-}
-
-function hgetall(id, callback = '') {
-    var key = getKey(id);
-    logger(key);
-    if (callback == '') {
-        db.hgetall(key);
-    } else {
-        db.hgetall(key, (err, rep) => {
-        	if (err) throw err;
-            callback(rep);
-        });
-    }
-}
-
-
-function prepareMulti(vals) {
-    var args = [];
-    switch (vals[0]) {
-        case 'hgetall':
-            args.push(getKey(vals[1]));
-            break;
-        case 'hmset':
-            var obj = vals[2];
-            var arr = [];
-            if (typeof(obj) == 'object' && !Array.isArray(obj)) {
-                for (var i in obj) {
-                    arr.push(i);
-                    arr.push(obj[i]);
-                }
-            } else {
-                arr = obj;
-            }
-            args.push(getKey(vals[1]));
-            args.push(arr);
-            break;
-        case 'sadd':
-            args.push(getKey(vals[1]));
-            args.push(vals[2]);;
-            break;
-
-        default:
-            break;
-    }
-
-    return [vals[0]].concat(args);
-}
-
-function all(callback = '') {
-    var key = redisPrefix + table + '*';
-    if (callback == '') {
-        db.keys(key);
-    } else {
-        db.keys(key, (err, rep) => {
-        	if (err) throw err;
-            callback(rep);
-        });
-    }
-}
-
-function search(pattern, callback = '') {
-    var key = redisPrefix + table + pattern;
-    if (callback == '') {
-        db.keys(key);
-    } else {
-        db.keys(key, (err, rep) => {
-        	if (err) throw err;
-            callback(rep);
-        });
-    }
-}
-
-function checkKey(key) {
-	return (key.indexOf(redisPrefix) == 0);
-}
-
-/**
- * check if specific key exists
- * return 1 if exists
- * 
- * @param  {String} id       key to check
- * @param  {Function} callback [description]
- * @return {void}          [description]
- */
-exports.exists = (id, callback = '') => {
-    var key = getKey(id);
-    if (callback == '') {
-        db.exists(key);
-    } else {
-        db.exists(key, (err, rep) => {
-        	if (err) throw err;
-            callback(rep);
-        });
-    }
-}
-
-/**
- * check if member of set exist
- * @param  {String} member       member value
- * @param  {String} callback [description]
- * @return {void}          [description]
- */
-exports.mexists = (member, callback) => {
-    if (storeType == 'set') {
-        db.sismember(member, (err, rep) => {
-            if (err) throw err;
-            callback(rep);
-        });
-    } else {
-        throw table+' is not set type.';
-    }
 }

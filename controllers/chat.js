@@ -11,13 +11,19 @@ exports.show = (req, res) => {
     var chatRooms = [];
 
     //get list chat room user can access
-    models.rooms_users.search('*' + user.username, (rooms) => {
+    var searchOptions = {
+        type: 'key',
+        pattern: '*' + user.username
+    };
+    models.rooms_users.search(searchOptions)
+    .then((rooms) => {
         var total = rooms.length;
         if (total == 0) {
             return res.render('chat_room.html', { user: user, rooms: chatRooms });
         }
         for (var i in rooms) {
-        	models.rooms.get(rooms[i], (room) => {
+        	models.rooms.get(rooms[i])
+            .then((room) => {
         		chatRooms.push(room);
                 total--;
                 if (total == 0) {
@@ -25,6 +31,10 @@ exports.show = (req, res) => {
                 }
         	});
         }
+    })
+    .catch((err) => {
+        logger(err);
+        return res.status(500).send('Server error.');
     });
 
     // return res.render('chat_room.html', { user: user, rooms: chatRooms });

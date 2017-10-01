@@ -82,7 +82,6 @@ exports.showLogin = (req, res) => {
 
 exports.doLogin = (req, res) => {
     if (!req.body) return res.sendStatus(400);
-    console.log(req.body.username);
     auth.login(req, res);
 };
 

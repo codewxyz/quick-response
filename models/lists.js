@@ -12,30 +12,42 @@ var logger = global.qrLog;
 function ListsModel() {
     BaseModel.apply(this, ['lists', 'set']);
 
-    this.getKeyOrg = (org, rcode) => 'orgs:'+org+':'+rcode;
-    this.getKeyUser = (org) => 'users:'+org;
-    this.getKeyRoom = (room) => 'rooms:'+room;
+    this.getKeyOrgRoom = (org) => 'orgs:'+org+':rooms';
+    this.getKeyOrgUser = (org) => 'orgs:'+org+':users';
+    this.getKeyRoomUser = (room) => 'rooms:'+room;
     this.keyGUser = 'users:global';
+    this.keyGOrg = 'orgs:global';
+    this.keyGRoom = 'rooms:global';
 
     this.createOrgRoom = (room, callback) => {
-    	var id = this.getKeyOrg(room.org, room.code);
+    	var id = this.getKeyOrgRoom(room.org);
         dset('sadd', id, room.code, callback);
-    }
-
-    this.createUsers = (username, callback) => {
-    	var id = 'users:global';
-        dset('sadd', id, username, callback);
-    }
+    };
 
     this.createOrgUsers = (org, username, callback) => {
-    	var id = this.getKeyUser(org);
+    	var id = this.getKeyOrgUser(org);
         dset('sadd', id, username, callback);
-    }  
+    };
 
     this.createRoomUsers = (room, username, callback) => {
-    	var id = this.getKeyRoom(room);
+    	var id = this.getKeyRoomUser(room);
         dset('sadd', id, username, callback);
-    }
+    };
+
+    this.addUser = (username, callback) => {
+        var id = this.keyGUser;
+        dset('sadd', id, username, callback);
+    };
+
+    this.addOrg = (code, callback) => {
+        var id = this.keyGOrg;
+        dset('sadd', id, code, callback);
+    };
+
+    this.addRoom = (code, callback) => {
+        var id = this.keyGRoom;
+        dset('sadd', id, code, callback);
+    };
 }
 
 util.inherits(ListsModel, BaseModel);

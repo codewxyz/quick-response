@@ -5,6 +5,7 @@ var nunjucks = require('nunjucks');
 var serveStatic = require('serve-static');//get static file
 var bodyParser = require('body-parser');//read data from post method
 var moment = require('moment');
+var promise = require("bluebird");
 
 //--------------------SESSION FOR APP---------------
 var session = require('express-session');
@@ -36,6 +37,8 @@ global.qrLog = function() {
     console.log('-----------System Log End.----------------\n');
     
 };
+var logger = qrLog;
+global.promise = promise;
 global.myserver = {
 	node: http,
 	express: app
@@ -46,19 +49,16 @@ global.system = {
 
 //load models
 global.models = {
-    users: new (require('./models/users.js')),
-    rooms: new (require('./models/rooms.js')),
-    orgs: new (require('./models/organizations.js')),
-    orgs_rooms: new (require('./models/orgs_rooms.js')),
-    orgs_users: new (require('./models/orgs_users.js')),
-    rooms_users: new (require('./models/rooms_users.js')),
-    chats: new (require('./models/chats.js')),
-    lists: new (require('./models/lists.js'))
+    users: new (require('./models/users.js'))(),
+    rooms: new (require('./models/rooms.js'))(),
+    orgs: new (require('./models/organizations.js'))(),
+    orgs_rooms: new (require('./models/orgs_rooms.js'))(),
+    orgs_users: new (require('./models/orgs_users.js'))(),
+    rooms_users: new (require('./models/rooms_users.js'))(),
+    chats: new (require('./models/chats.js'))(),
+    lists: new (require('./models/lists.js'))()
 };
-global.auth = require('./lib/auth.js')({
-    model: models.users,
-    modelFunc: 'get'
-});
+global.auth = require('./lib/auth.js');
 var qrs = require('./lib/qr_service.js')(http, sharedsession);
 global.qrService = qrs;
 //----------------LOAD CONTROLLERS----------------------
@@ -102,28 +102,38 @@ app.post('/logout', loginController.doLogout);
 app.get('/main', chatController.show);
 
 app.get('/admin', adminController.show);
+app.get('/admin/search/user', adminController.searchUser);
 app.get('/admin/get/users', adminController.getUsers);
 app.get('/admin/get/orgs', adminController.getOrgs);
 app.get('/admin/get/rooms', adminController.getRooms);
 app.post('/admin/set/org', adminController.addOrg);
+app.post('/admin/set/org-users', adminController.addOrgUsers);
 app.post('/admin/set/room', adminController.addRoom);
 app.post('/admin/set/user', adminController.addUser);
 
 
 //------------------STARTUP THE APP SERVER----------
 if (!module.parent) {
-	//server listen
-	http.listen(3000, function() {
-	    console.log('server listening on *:3000');
-	});	
+    var checker = setInterval(checkDBConnection, 1000);
+}
 
-    initServer();
+function checkDBConnection() {
+    logger('checking Redis connection...');
+    if (models.lists.redis().connected) {
+        //server listen
+        http.listen(3000, function() {
+            console.log('server listening on *:3000');
+        }); 
+
+        initServer();
+        clearInterval(checker);
+    }
 }
 
 function initServer() {
-    //create default admin if not exist
-    models.lists.mexists('admin', (user) => {
-        if (user == 0) {
+    models.lists.mexists(models.lists.keyGUser, 'admin')
+    .then((hasUser) => {
+        if (hasUser == 0) {
             var obj = {
                 username: 'admin',
                 name: 'Administrator',
@@ -136,18 +146,15 @@ function initServer() {
                 ['hmset', obj.username, obj],
                 ['sadd', models.lists.getKey(models.lists.keyGUser, true), obj.username]
             ];
-            models.users.multi(commands, true, (results) => {
-                logger(results);
+            models.users.multi(commands)
+            .then((results) => {
                 if (results != null && results.length == commands.length) {
-                    qrLog('admin user created');
+                    logger('admin user created');
+                    return;
                 }
-                qrLog('failed to create admin user');
+                logger('failed to create admin user');
             });
-            // models.users.create(obj, (rep) => {
-            //     if (rep != null) {
-            //         qrLog('admin user created');
-            //     }
-            // });
         }
     })
+    .catch(logger);
 }

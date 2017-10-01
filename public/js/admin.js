@@ -3,17 +3,19 @@
         users: {
             urlget: '/admin/get/users',
             urlset: '/admin/set/user',
-            handle: (user) => { insertUser(user) }
+            urlsearch: '/admin/search/user',
+            handle: (user) => { insertUser(user); }
         },
         orgs: {
             urlget: '/admin/get/orgs',
             urlset: '/admin/set/org',
-            handle: (user) => { insertOrg(user) }
+            urlsetu: '/admin/set/org-users',
+            handle: (user) => { insertOrg(user); }
         },
         rooms: {
             urlget: '/admin/get/rooms',
             urlset: '/admin/set/room',
-            handle: (user) => { insertRoom(user) }
+            handle: (user) => { insertRoom(user); }
         }
     };
 
@@ -47,9 +49,27 @@
         setData(getType);
     });
 
-    $('.btn-sub-action').on('click', function() {
-
+    $('.btn-fm-search-submit').on('click', function() {
+        setOrgUsers();
     });
+
+    function subActions() {
+
+        $('.btn-sub-action').on('click', function() {
+            var type = $(this).data('type');
+            var code = $(this).data('code');
+            switch (type) {
+                case 'orgs-add-user':
+                    $('#fm-search-org-code').val(code);
+                    $('#qr-fm-search').modal('show');
+                    break;
+                default:
+                    // statements_def
+                    break;
+            }
+        });
+
+    }
 
     function hideLoading() {
         $('.chatbody-loading').css('display', 'none');
@@ -62,51 +82,103 @@
     }
 
     function insertUser(user) {
-        var temp = '<tr> \
-                    <td class="avatar"><img src="' + user.avatar + '" /></td> \
-                    <td class="display-msg"> \
-                    <p>' + user.username + '</p> \
-                    <p>Role: ' + user.role + '</p> \
-                    <p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action" \
-                    title="view details" \
-                    data-code="'+user.username+'"><i class="fa fa-eye"></i></button> \
-                    <button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this user" \
-                    data-code="'+user.username+'"><i class="fa fa-pencil"></i></button></p> \
-                    </td> \
-                    </tr>';
+        var str = "";
+           str += '<tr>';
+           str += '<td class="avatar"><img src="${txt0}" /></td>';
+           str += '<td class="display-msg">';
+           str += '<p>${txt1}</p>';
+           str += '<p>Role: ${txt2}</p>';
+           str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
+           str += 'title="view details"';
+           str += 'data-code="${txt3}"><i class="fa fa-eye"></i></button>';
+           str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this user"';
+           str += 'data-code="${txt4}"><i class="fa fa-pencil"></i></button></p>';
+           str += '</td>';
+           str += '</tr';
+        var temp = formatTxt(str, [user.avatar, user.role, user.username, user.username]);
+        
         $('.chatbody table tbody').append(temp);
     }
 
     function insertOrg(org) {
-        var temp = '<tr> \
-                    <td class="avatar"><img src="./images/logo.png" /></td> \
-                    <td class="display-msg"> \
-                    <p>' + org.name + '</p> \
-                    <p>Code: ' + org.code + '</p>\
-                    <p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action" \
-                    title="add user to this organization" \
-                    data-code="'+org.code+'"><i class="fa fa-user"></i></button> \
-                    <button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this organization" \
-                    data-code="'+org.code+'"><i class="fa fa-pencil"></i></button></p> \
-                    </td> \
-                    </tr>';
+        var str = "";
+           str += '<tr>';
+           str += '<td class="avatar"><img src="./images/logo.png" /></td>';
+           str += '<td class="display-msg">';
+           str += '<p>${txt0}</p>';
+           str += '<p>Code: ${txt1}</p>';
+           str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
+           str += 'title="add user to this organization"';
+           str += 'data-code="${txt2}" data-type="orgs-add-user"><i class="fa fa-user"></i></button>';
+           str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this organization"';
+           str += 'data-code="${txt3}"><i class="fa fa-pencil"></i></button></p>';
+           str += '</td>';
+           str += '</tr';
+        var temp = formatTxt(str, [org.name, org.code, org.code, org.code]);
+       
         $('.chatbody table tbody').append(temp);
     }
 
     function insertRoom(room) {
-        var temp = '<tr> \
-                    <td class="avatar"><img src="' + room.avatar + '" /></td> \
-                    <td class="display-msg"> \
-                    <p>' + room.name + '</p> \
-                    <p>Code: ' + room.code + '</p> \
-                    <p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action" \
-                    title="add user to this room" \
-                    data-code="'+room.code+'"><i class="fa fa-user"></i></button> \
-                    <button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this room" \
-                    data-code="'+room.code+'"><i class="fa fa-pencil"></i></button></p> \
-                    </td> \
-                    </tr>';
+        var str = "";
+           str += '<tr>';
+           str += '<td class="avatar"><img src="${txt0}" /></td>';
+           str += '<td class="display-msg">';
+           str += '<p>${txt1}</p>';
+           str += '<p>Code: ${txt2}</p>';
+           str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
+           str += 'title="add user to this room"';
+           str += 'data-code="${txt3}"><i class="fa fa-user"></i></button>';
+           str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this room"';
+           str += 'data-code="${txt4}"><i class="fa fa-pencil"></i></button></p>';
+           str += '</td>';
+           str += '</tr';
+        var temp = formatTxt(str, [room.avatar, room.name, room.code, room.code, room.code]);
+
         $('.chatbody table tbody').append(temp);
+    }
+
+    function formatTxt(temp, txtArr) {
+        for (var i in txtArr) {
+            temp = temp.replace('${txt'+i+'}', txtArr[i]);
+        }
+        return temp;
+    }
+
+    function setOrgUsers() {
+        data = {
+            list: $('#fm-search-username').val(),
+            org: $('#fm-search-org-code').val()
+        };
+        $.ajax({
+            url: ajaxGetData.orgs.urlsetu,
+            type: 'post',
+            data: data,
+            dataType: 'json',
+            complete: function(xhr, status) {
+                console.log(xhr);
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error to add users.');
+                    $('#qr-alert').modal('show');
+                }
+                $('#qr-fm-search').modal('hide');
+                $('input').val('');
+            },
+            success: function(result, status, xhr) {
+                console.log(xhr);
+                if (result.success) {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                } else {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                }
+            }
+        });
     }
 
     function setData(type) {
@@ -144,6 +216,10 @@
             dataType: 'json',
             complete: function(xhr, status) {
                 console.log(xhr);
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
                 if (status == 'error') {
                     $('#qr-alert .modal-body').html('Error creating data.');
                     $('#qr-alert').modal('show');
@@ -152,15 +228,12 @@
             },
             success: function(result, status, xhr) {
                 console.log(xhr);
-                if (xhr.status == 403) {
-                	location.href = '/';
-                }
-                if (result != undefined && result.success) {
-                    $('#qr-alert .modal-body').html('Created successfully.');
+                if (result.success) {
+                    $('#qr-alert .modal-body').html(result.msg);
                     getData(type);
                     $('#qr-alert').modal('show');
                 } else {
-                    $('#qr-alert .modal-body').html('Cannot create data.');
+                    $('#qr-alert .modal-body').html(result.msg);
                     $('#qr-alert').modal('show');
                 }
             }
@@ -177,6 +250,7 @@
                 console.log(xhr);
                 if (xhr.status == 403) {
                 	location.href = '/';
+                    return;
                 }
                 if (status == 'error') {
                     $('.chatbody table tbody').html('Error loading data.');
@@ -185,10 +259,15 @@
             },
             success: function(result, status, xhr) {
                 console.log(xhr.status);
-                if (result != undefined && result.length > 0) {
-                    for (var i in result) {
-                        ajaxGetData[type]['handle'](result[i]);
+                if (!result.success) {
+                    $('.chatbody table tbody').html(result.msg);
+                    return;
+                }
+                if (result.data.length > 0) {
+                    for (var i in result.data) {
+                        ajaxGetData[type].handle(result.data[i]);
                     }
+                    subActions();
                 } else {
                     $('.chatbody table tbody').html('There are no data to show.');
                 }
@@ -204,6 +283,7 @@
                 console.log(xhr);
                 if (xhr.status == 403) {
                 	location.href = '/';
+                    return;
                 }
                 if (status == 'error') {
                     $('#qr-alert .modal-body').html('Error getting Organization data.');
@@ -212,10 +292,15 @@
             },
             success: function(result, status, xhr) {
                 console.log(status);
-                if (result != undefined && result.length > 0) {
+                if (!result.success) {
+                    $('#fm-room-org').html('<option value="">'+result.msg+'</option>');
+                    // $('.chatbody table tbody').html(result.msg);
+                    return;
+                }
+                if (result.data.length > 0) {
                     var selectHtml = '';
-                    for (var i in result) {
-                        selectHtml += '<option value="' + result[i].code + '">' + result[i].name + '</option>';
+                    for (var i in result.data) {
+                        selectHtml += '<option value="' + result.data[i].code + '">' + result.data[i].name + '</option>';
                     }
                     $('#fm-room-org').html(selectHtml);
                 } else {
@@ -225,4 +310,71 @@
         });
     }
 
-})(jQuery)
+    //---------------autocomplete input----------------
+
+    function split( val ) {
+      return val.split( /,\s*/ );
+    }
+    function extractLast( term ) {
+      return split( term ).pop();
+    }
+ 
+    $( "#fm-search-username" )
+      // don't navigate away from the field on tab when selecting an item
+      .on( "keydown", function( event ) {
+        if ( event.keyCode === $.ui.keyCode.TAB &&
+            $( this ).autocomplete( "instance" ).menu.active ) {
+          event.preventDefault();
+        }
+      })
+      .autocomplete({
+        source: function( request, response ) {
+            $.ajax({
+                url: ajaxGetData.users.urlsearch, 
+                data: {
+                    term: extractLast( request.term )
+                },
+                type: 'get',
+                complete: function(xhr, status) {
+                    if (xhr.status == 403) {
+                        location.href = '/';
+                        return;
+                    }
+                    if (status == 'error') {
+                        response([]);
+                    }
+                },
+                success: function(result,status,xhr) {
+                    if (result.success) {
+                        response(result.data);
+                    } else {
+                        response([]);
+                    }
+                }
+            });
+        },
+        search: function() {
+          // custom minLength
+          var term = extractLast( this.value );
+          if ( term.length < 3 ) {
+            return false;
+          }
+        },
+        focus: function() {
+          // prevent value inserted on focus
+          return false;
+        },
+        select: function( event, ui ) {
+          var terms = split( this.value );
+          // remove the current input
+          terms.pop();
+          // add the selected item
+          terms.push( ui.item.value );
+          // add placeholder to get the comma-and-space at the end
+          terms.push( "" );
+          this.value = terms.join( ", " );
+          return false;
+        }
+      });
+
+})(jQuery);

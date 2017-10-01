@@ -182,12 +182,20 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Add</h4>
+        <h4 class="modal-title" id="myModalLabel">Add User</h4>
       </div>
       <div class="modal-body">
+        <form id="fm-orgs-add-user">
+            <div class="form-group ui-widget">
+                <label for="fm-username">User</label>
+                <input type="text" class="form-control" id="fm-search-username" placeholder="username">
+                <input type="hidden" id="fm-search-org-code" value="">
+            </div>
+        </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary btn-fm-search-submit">Add</button>
       </div>
     </div>
   </div>
@@ -213,8 +221,6 @@
 
 {% block script %}
 <!-- socket.io for client side -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
-<script src="/js/qrservice.js"></script>
 <script src="/js/main.js"></script>
 <script src="/js/admin.js"></script>
 {% endblock %}
