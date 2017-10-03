@@ -14,7 +14,9 @@ function ListsModel() {
 
     this.getKeyOrgRoom = (org) => 'orgs:'+org+':rooms';
     this.getKeyOrgUser = (org) => 'orgs:'+org+':users';
-    this.getKeyRoomUser = (room) => 'rooms:'+room;
+    this.getKeyOrgNUser = (org) => 'orgs:'+org+':non-users';
+    this.getKeyRoomUser = (room) => 'rooms:'+room+':users';
+    this.getKeyRoomNUser = (room) => 'rooms:'+room+':non-users';
     this.keyGUser = 'users:global';
     this.keyGOrg = 'orgs:global';
     this.keyGRoom = 'rooms:global';

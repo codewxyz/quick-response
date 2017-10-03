@@ -55,7 +55,6 @@ function BaseModel() {
         for (var i in commands) {
             commandList.push(prepareMulti(commands[i]));
         }
-        logger(commandList);
 
         return db.batch(commandList).execAsync();
     };
@@ -75,6 +74,9 @@ function BaseModel() {
                     break;
                 case 'set':
                     resolve(dset('sadd', vals[primaryKey], vals.data));
+                    break;
+                case 'set_diff':
+                    resolve(dset('sdiffstore', vals[primaryKey], vals.data));
                     break;
                 default:
                     reject('no store type set in table '+table);
@@ -224,9 +226,9 @@ function checkKey(key) {
 function prepareMulti(vals) {
     var args = [];
     switch (vals[0]) {
-        case 'hgetall':
-            args.push(getKey(vals[1]));
-            break;
+        // case 'hgetall':
+        //     args.push(getKey(vals[1]));
+        //     break;
         case 'hmset':
             var obj = prepareData(vals[2]);
             var arr = [];
@@ -238,12 +240,15 @@ function prepareMulti(vals) {
             args.push(getKey(vals[1]));
             args.push(arr);
             break;
-        case 'sadd':
-            args.push(getKey(vals[1]));
-            args.push(vals[2]);
-            break;
+        // case 'sadd':
+        //     args.push(getKey(vals[1]));
+        //     args.push(vals[2]);
+        //     break;
 
         default:
+            args.push(getKey(vals[1]));
+            if (vals[2] != undefined)
+                args.push(vals.slice(2));
             break;
     }
 

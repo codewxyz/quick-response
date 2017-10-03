@@ -18,7 +18,7 @@ session = session({
     store: new redisStore({
         host: '127.0.0.1',
         port: '6379',
-        prefix: 'qrs-session:'
+        prefix: 'qr-session:'
     })
 });
 
@@ -157,4 +157,26 @@ function initServer() {
         }
     })
     .catch(logger);
+
+    models.lists.mexists(models.lists.keyGOrg, 'qrgb')
+    .then((hasOrg) => {
+        if (hasOrg == 0) {
+            var obj = {
+                code: 'qrgb',
+                name: 'Default organization of QR App'
+            };
+            var commands = [
+                ['hmset', obj.code, obj],
+                ['sadd', models.lists.getKey(models.lists.keyGOrg, true), obj.code]
+            ];
+            models.orgs.multi(commands)
+            .then((results) => {
+                if (results != null && results.length == commands.length) {
+                    logger('global organization created');
+                    return;
+                }
+                logger('failed to create global organization');
+            });
+        }
+    })
 }

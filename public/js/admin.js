@@ -53,6 +53,10 @@
         setOrgUsers();
     });
 
+    $('#qr-fm-search , #qr-modal-form').on('hidden.bs.modal', function(e) {
+        $('form input').val('');
+    });
+
     function subActions() {
 
         $('.btn-sub-action').on('click', function() {
@@ -83,56 +87,56 @@
 
     function insertUser(user) {
         var str = "";
-           str += '<tr>';
-           str += '<td class="avatar"><img src="${txt0}" /></td>';
-           str += '<td class="display-msg">';
-           str += '<p>${txt1}</p>';
-           str += '<p>Role: ${txt2}</p>';
-           str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
-           str += 'title="view details"';
-           str += 'data-code="${txt3}"><i class="fa fa-eye"></i></button>';
-           str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this user"';
-           str += 'data-code="${txt4}"><i class="fa fa-pencil"></i></button></p>';
-           str += '</td>';
-           str += '</tr';
+        str += '<tr>';
+        str += '<td class="avatar"><img src="${txt0}" /></td>';
+        str += '<td class="display-msg">';
+        str += '<p>${txt1}</p>';
+        str += '<p>Role: ${txt2}</p>';
+        str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
+        str += 'title="view details"';
+        str += 'data-code="${txt3}"><i class="fa fa-eye"></i></button>';
+        str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this user"';
+        str += 'data-code="${txt4}"><i class="fa fa-pencil"></i></button></p>';
+        str += '</td>';
+        str += '</tr';
         var temp = formatTxt(str, [user.avatar, user.role, user.username, user.username]);
-        
+
         $('.chatbody table tbody').append(temp);
     }
 
     function insertOrg(org) {
         var str = "";
-           str += '<tr>';
-           str += '<td class="avatar"><img src="./images/logo.png" /></td>';
-           str += '<td class="display-msg">';
-           str += '<p>${txt0}</p>';
-           str += '<p>Code: ${txt1}</p>';
-           str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
-           str += 'title="add user to this organization"';
-           str += 'data-code="${txt2}" data-type="orgs-add-user"><i class="fa fa-user"></i></button>';
-           str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this organization"';
-           str += 'data-code="${txt3}"><i class="fa fa-pencil"></i></button></p>';
-           str += '</td>';
-           str += '</tr';
+        str += '<tr>';
+        str += '<td class="avatar"><img src="./images/logo.png" /></td>';
+        str += '<td class="display-msg">';
+        str += '<p>${txt0}</p>';
+        str += '<p>Code: ${txt1}</p>';
+        str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
+        str += 'title="add user to this organization"';
+        str += 'data-code="${txt2}" data-type="orgs-add-user"><i class="fa fa-user"></i></button>';
+        str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this organization"';
+        str += 'data-code="${txt3}"><i class="fa fa-pencil"></i></button></p>';
+        str += '</td>';
+        str += '</tr';
         var temp = formatTxt(str, [org.name, org.code, org.code, org.code]);
-       
+
         $('.chatbody table tbody').append(temp);
     }
 
     function insertRoom(room) {
         var str = "";
-           str += '<tr>';
-           str += '<td class="avatar"><img src="${txt0}" /></td>';
-           str += '<td class="display-msg">';
-           str += '<p>${txt1}</p>';
-           str += '<p>Code: ${txt2}</p>';
-           str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
-           str += 'title="add user to this room"';
-           str += 'data-code="${txt3}"><i class="fa fa-user"></i></button>';
-           str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this room"';
-           str += 'data-code="${txt4}"><i class="fa fa-pencil"></i></button></p>';
-           str += '</td>';
-           str += '</tr';
+        str += '<tr>';
+        str += '<td class="avatar"><img src="${txt0}" /></td>';
+        str += '<td class="display-msg">';
+        str += '<p>${txt1}</p>';
+        str += '<p>Code: ${txt2}</p>';
+        str += '<p>Actions: <button type="button" class="btn btn-default btn-xs btn-sub-action"';
+        str += 'title="add user to this room"';
+        str += 'data-code="${txt3}"><i class="fa fa-user"></i></button>';
+        str += '<button type="button" class="btn btn-default btn-xs btn-sub-action" title="edit this room"';
+        str += 'data-code="${txt4}"><i class="fa fa-pencil"></i></button></p>';
+        str += '</td>';
+        str += '</tr';
         var temp = formatTxt(str, [room.avatar, room.name, room.code, room.code, room.code]);
 
         $('.chatbody table tbody').append(temp);
@@ -140,7 +144,7 @@
 
     function formatTxt(temp, txtArr) {
         for (var i in txtArr) {
-            temp = temp.replace('${txt'+i+'}', txtArr[i]);
+            temp = temp.replace('${txt' + i + '}', txtArr[i]);
         }
         return temp;
     }
@@ -166,7 +170,6 @@
                     $('#qr-alert').modal('show');
                 }
                 $('#qr-fm-search').modal('hide');
-                $('input').val('');
             },
             success: function(result, status, xhr) {
                 console.log(xhr);
@@ -241,7 +244,7 @@
     }
 
     function getData(type) {
-    	$('.chatbody table tbody').html('');
+        $('.chatbody table tbody').html('');
         $.ajax({
             url: ajaxGetData[type].urlget,
             type: 'get',
@@ -249,7 +252,7 @@
             complete: function(xhr, status) {
                 console.log(xhr);
                 if (xhr.status == 403) {
-                	location.href = '/';
+                    location.href = '/';
                     return;
                 }
                 if (status == 'error') {
@@ -274,7 +277,7 @@
             }
         });
     }
-    
+
     function getSelectOrg() {
         $.ajax({
             url: ajaxGetData.orgs.urlget,
@@ -282,7 +285,7 @@
             complete: function(xhr, status) {
                 console.log(xhr);
                 if (xhr.status == 403) {
-                	location.href = '/';
+                    location.href = '/';
                     return;
                 }
                 if (status == 'error') {
@@ -293,7 +296,7 @@
             success: function(result, status, xhr) {
                 console.log(status);
                 if (!result.success) {
-                    $('#fm-room-org').html('<option value="">'+result.msg+'</option>');
+                    $('#fm-room-org').html('<option value="">' + result.msg + '</option>');
                     // $('.chatbody table tbody').html(result.msg);
                     return;
                 }
@@ -312,69 +315,72 @@
 
     //---------------autocomplete input----------------
 
-    function split( val ) {
-      return val.split( /,\s*/ );
+    function split(val) {
+        return val.split(/,\s*/);
     }
-    function extractLast( term ) {
-      return split( term ).pop();
+
+    function extractLast(term) {
+        return split(term).pop();
     }
- 
-    $( "#fm-search-username" )
-      // don't navigate away from the field on tab when selecting an item
-      .on( "keydown", function( event ) {
-        if ( event.keyCode === $.ui.keyCode.TAB &&
-            $( this ).autocomplete( "instance" ).menu.active ) {
-          event.preventDefault();
-        }
-      })
-      .autocomplete({
-        source: function( request, response ) {
-            $.ajax({
-                url: ajaxGetData.users.urlsearch, 
-                data: {
-                    term: extractLast( request.term )
-                },
-                type: 'get',
-                complete: function(xhr, status) {
-                    if (xhr.status == 403) {
-                        location.href = '/';
-                        return;
+
+    $("#fm-search-username")
+        // don't navigate away from the field on tab when selecting an item
+        .on("keydown", function(event) {
+            if (event.keyCode === $.ui.keyCode.TAB &&
+                $(this).autocomplete("instance").menu.active) {
+                event.preventDefault();
+            }
+        })
+        .autocomplete({
+            source: function(request, response) {
+                $.ajax({
+                    url: ajaxGetData.users.urlsearch,
+                    data: {
+                        term: extractLast(request.term),
+                        org: $('#fm-search-org-code').val()
+                    },
+                    type: 'get',
+                    complete: function(xhr, status) {
+                        if (xhr.status == 403) {
+                            location.href = '/';
+                            return;
+                        }
+                        if (status == 'error') {
+                            response([{ label: "no data found", value: "no-data" }]);
+                        }
+                    },
+                    success: function(result, status, xhr) {
+                        if (result.success) {
+                            response(result.data);
+                        } else {
+                            response([{ label: "no data found", value: "no-data" }]);
+                        }
                     }
-                    if (status == 'error') {
-                        response([]);
-                    }
-                },
-                success: function(result,status,xhr) {
-                    if (result.success) {
-                        response(result.data);
-                    } else {
-                        response([]);
-                    }
+                });
+            },
+            search: function() {
+                // custom minLength
+                var term = extractLast(this.value);
+                if (term.length < 3) {
+                    return false;
                 }
-            });
-        },
-        search: function() {
-          // custom minLength
-          var term = extractLast( this.value );
-          if ( term.length < 3 ) {
-            return false;
-          }
-        },
-        focus: function() {
-          // prevent value inserted on focus
-          return false;
-        },
-        select: function( event, ui ) {
-          var terms = split( this.value );
-          // remove the current input
-          terms.pop();
-          // add the selected item
-          terms.push( ui.item.value );
-          // add placeholder to get the comma-and-space at the end
-          terms.push( "" );
-          this.value = terms.join( ", " );
-          return false;
-        }
-      });
+            },
+            focus: function() {
+                // prevent value inserted on focus
+                return false;
+            },
+            select: function(event, ui) {
+                var terms = split(this.value);
+                // remove the current input
+                terms.pop();
+                // add the selected item
+                if (ui.item.value != 'no-data')
+                    terms.push(ui.item.value);
+                // add placeholder to get the comma-and-space at the end
+                terms.push("");
+                this.value = terms.join(", ");
+                return false;
+            }
+        });
 
 })(jQuery);
