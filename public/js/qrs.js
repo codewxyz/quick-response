@@ -6,10 +6,14 @@
         qrgb: io('/qrgb')
     };
 
-    var qrsEvents = {
+    var roomEvents = {
         message: 'chat message',
         count_online: 'count user online',
         buzz: 'chat buzz'
+    };
+    var orgEvents = {
+        join_room: 'user join room',
+        new_room: 'new room created'
     };
     var alertMsg = {
         change_room_err: 'Cannot change room.',
@@ -29,6 +33,8 @@
 
     connectRooms();
 
+    setOrgEvents();
+
     //send message to server
     $('.btn-chat-submit').on('click', function() {
         sendMsg(curSocket, curRoom);
@@ -37,7 +43,7 @@
     });
 
     //change chat room
-    $('.chat-room').on('click', function () {
+    $('.chat-room').on('click', function() {
         var oldRoom = curRoom;
         var getNs = $(this).data('org');
         var getRoom = $(this).data('room');
@@ -54,7 +60,7 @@
 
         $('.chat-active').removeClass('chat-active');
         $(this).addClass('chat-active');
-        $('#r-'+curRoom).find('.chat-room-unread').html('');
+        $('#r-' + curRoom).find('.chat-room-unread').html('');
     });
 
     $('#new-room-btn').on('click', function() {
@@ -90,6 +96,7 @@
                 if (result.success) {
                     $('#qr-alert .modal-body').html(result.msg);
                     displayNewRoom(result.data);
+                    notifyJoinRoom(result.data);
                     $('#qr-alert').modal('show');
                 } else {
                     $('#qr-alert .modal-body').html(result.msg);
@@ -99,10 +106,29 @@
         });
     });
 
+    function setOrgEvents() {
+        for (var i in socketOrg) {
+            socketOrg[i].on(orgEvents.new_room, function(obj) {
+                if ( ($('#user').val() == obj.username) && 
+                    ($('#r-'+obj.room.code).length == 0) ) {
+                    displayNewRoom(obj.room);
+                    notifyJoinRoom(obj.room);
+                }
+            });
+        }
+    }
+
+    function notifyJoinRoom(room) {
+        var obj = {
+            roomCode: room.code
+        };
+        socketOrg[room.org].emit(orgEvents.join_room, obj);
+    }
+
     function displayNewRoom(room) {
         var temp = '';
         temp += '<a href="javascript:void(0)" class="chat-room" id="r-${txt0}"';
-        temp += 'data-room="${txt1}" data-ns="${txt2}">';
+        temp += 'data-room="${txt1}" data-org="${txt2}">';
         temp += '<span class="chatimg">';
         temp += '<img src="${txt3}" />';
         temp += '</span>';
@@ -132,8 +158,8 @@
     //validate input and send to server
     function sendMsg(sk, room) {
         console.log(curSocket);
-        var content = $(selectorList.input_msg).val(); 
-        var roomEvent = createChatEvent(room, qrsEvents.message);
+        var content = $(selectorList.input_msg).val();
+        var roomEvent = createChatEvent(room, roomEvents.message);
         if (content == '') {
             alert(alertMsg.validate_err_01);
             return;
@@ -153,14 +179,23 @@
         if (user == obj.user) {
             selfClass = ['my-avatar', 'my-msg'];
         }
-        var temp = '<tr> \
-                    <td class="avatar '+selfClass[0]+'"><img src="'+obj.avatar+'" alt="avatar"/></td> \
-                    <td class="display-msg '+selfClass[1]+'"> \
-                    <p class="display-msg-header"><span class="display-msg-header-username">'+obj.name+'</span> '+
-                    '<span class="display-msg-header-time">'+obj.time+'</span></p> \
-                    <p class="display-msg-content">'+formatMsg(obj.msg)+'</p> \
-                    </td> \
-                    </tr>';
+        var str = "";
+        str += '<tr>';
+        str += '<td class="avatar ${txt0}"><img src="${txt1}" alt="avatar"/></td>';
+        str += '<td class="display-msg ${txt2}">';
+        str += '<p class="display-msg-header"><span class="display-msg-header-username">${txt3}</span>&nbsp;&nbsp;';
+        str += '<span class="display-msg-header-time">${txt4}</span></p>';
+        str += '<p class="display-msg-content">${txt5}</p>';
+        str += '</td>';
+        str += '</tr>';
+        var temp = formatTxt(str, [
+            selfClass[0],
+            obj.avatar,
+            selfClass[1],
+            obj.name,
+            obj.time,
+            formatMsg(obj.msg)
+        ]);
 
         //check to store or display this message                    
         if (room == curRoom) {
@@ -168,15 +203,15 @@
             //auto scroll to newest message on screen
             $(selectorList.chat_container).animate({ scrollTop: $(selectorList.chat_container_inner).height() }, 1000);
         } else {
+            console.log(temp);
             if (chatContent[room] != undefined) {
                 chatContent[room] += temp;
             } else {
                 chatContent[room] = temp;
             }
 
-            var unreadhHtml = $('#r-'+room).find('.chat-room-unread').html();
-            console.log(room);
-            $('#r-'+room).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml)+1);
+            var unreadhHtml = $('#r-' + room).find('.chat-room-unread').html();
+            $('#r-' + room).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml) + 1);
         }
     }
 
@@ -188,7 +223,7 @@
     function connectRooms() {
         var divRooms = $('.chat-room');
         for (var i = 0; i < divRooms.length; i++) {
-        
+
             var getNs = $(divRooms[i]).data('org');
             var getRoom = $(divRooms[i]).data('room');
 
@@ -205,8 +240,8 @@
     }
 
     //listen on event of each room
-    function connectRoom(sk, room) {        
-        var roomEvent = createChatEvent(room, qrsEvents.message);
+    function connectRoom(sk, room) {
+        var roomEvent = createChatEvent(room, roomEvents.message);
         sk.on(roomEvent, function(msg) {
             insertChat(msg, room);
         });
@@ -229,9 +264,9 @@
     }
 
     function eventCountOnline(sk, room) {
-        var roomEvent = createChatEvent(room, qrsEvents.count_online);
+        var roomEvent = createChatEvent(room, roomEvents.count_online);
         sk.on(roomEvent, function(msg) {
-            $('#r-'+room).find('.chat-room-online').html(msg.count);
+            $('#r-' + room).find('.chat-room-online').html(msg.count);
         });
     }
 
