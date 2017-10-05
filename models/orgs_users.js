@@ -11,6 +11,8 @@ var logger = global.qrLog;
 
 function OrgsUsersModel() {
     BaseModel.apply(this, ['orgs_users', 'set']);
+
+    this.reserved = ['admin'];
 }
 
 util.inherits(OrgsUsersModel, BaseModel);

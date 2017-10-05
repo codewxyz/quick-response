@@ -27,6 +27,15 @@ function BaseModel() {
 
     this.redis = () => db;
 
+    this.custom = (command, id, args=null) => {
+        var key = getKey(id);
+        if (args == null) {
+            return db[command+'Async'](key);
+        } else {
+            return db[command+'Async'](key, args);
+        }
+    }
+
     /**
      * perform db commands in transaction
      * get only one result at the end
@@ -94,12 +103,12 @@ function BaseModel() {
         return mexists(id, vals);
     };
 
-    // this.list = () => {
-    //     return all();
-    // };
-
     this.get = (val) => {
         return hgetall(val);
+    };
+
+    this.getList = (val) => {
+
     };
 
     this.all = () => {
@@ -160,7 +169,6 @@ function all() {
 
 function count(id, type) {
     var key = getKey(id);
-    logger(key, type);
     switch (type) {
         case 'set':
             return db.scardAsync(key);
@@ -177,7 +185,6 @@ function search(type, val) {
             return db.keysAsync(pattern);
         case 'set':
             var key = getKey(val.key);
-        logger(val);
             return db.sscanAsync(key, 0, 'match', val.pattern, 'count', val.count);
         default:
             // statements_def
@@ -226,9 +233,6 @@ function checkKey(key) {
 function prepareMulti(vals) {
     var args = [];
     switch (vals[0]) {
-        // case 'hgetall':
-        //     args.push(getKey(vals[1]));
-        //     break;
         case 'hmset':
             var obj = prepareData(vals[2]);
             var arr = [];
@@ -240,10 +244,6 @@ function prepareMulti(vals) {
             args.push(getKey(vals[1]));
             args.push(arr);
             break;
-        // case 'sadd':
-        //     args.push(getKey(vals[1]));
-        //     args.push(vals[2]);
-        //     break;
 
         default:
             args.push(getKey(vals[1]));

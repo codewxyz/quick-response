@@ -33,6 +33,12 @@ body {
 .chat-active {
   border-right: 4px solid #99ccff;
 }
+.chat-room-btn {
+	background-color: white;
+	border: 2px solid lightgray;
+	padding: 3px 8px;
+	margin-bottom: 10px;
+}
 .chat-room-info {
     display: inline-block;
     vertical-align: middle;

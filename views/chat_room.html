@@ -52,9 +52,12 @@
     </div>
 </div>
 <div class="row">
-    <div class="col-sm-4">
+    <div class="col-sm-4 chat-room-list">
+    <button class="chat-room-btn" id="new-room-btn" title="add new room">
+        <i class="fa fa-plus-circle fa-lg"></i>
+    </button>
     <a href="javascript:void(0)" class="chat-room chat-active" id="r-room"
-     data-room="room" data-ns="W">
+     data-room="room" data-org="W">
         <span class="chatimg">
             <img src="./images/room-public.png" alt="chat-room-icon" />
         </span>
@@ -63,23 +66,11 @@
             <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
         </div>
     </a>
-    {% for room in gRooms %}
-        <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
-         data-room="{{ room.code }}" data-ns="{{ room.ns }}">
-            <span class="chatimg">
-                <img src="./images/room-public.png" alt="chat-room-icon" />
-            </span>
-            <div class="chat-room-info">
-                <div class="chat-room-name">{{ room.name }}</div>
-                <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
-            </div>
-        </a>
-    {% endfor %}
     {% for room in rooms %}
         <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
-         data-room="{{ room.code }}" data-ns="{{ room.ns }}">
+         data-room="{{ room.code }}" data-org="{{ room.org }}">
             <span class="chatimg">
-                <img src="{{ rooms.avatar }}" alt="chat-room-icon" />
+                <img src="{{ room.avatar }}" alt="chat-room-icon" />
             </span>
             <div class="chat-room-info">
                 <div class="chat-room-name">{{ room.name }}</div>
@@ -115,11 +106,45 @@
         </div>
     </div>
 </div>
+
 <form id="fm-logout" action="/logout" method="post" class="invisible">
 </form>
+
 <input type="hidden" id="user" value="{{ user.username }}">
 
-    {% endblock %}
+<!-- Modal -->
+<div class="modal fade" id="qr-modal-room" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Add Room</h4>
+      </div>
+      <div class="modal-body">
+        <form id="fm-room">
+            <div class="form-group">
+                <label for="fm-room-name">Name</label>
+                <input type="text" class="form-control" id="fm-room-name" placeholder="room name">
+                <input type="hidden" id="fm-room-org" value="">
+            </div>
+            <div class="form-group">
+                <label for="fm-room-avatar">Icon</label>
+                <input type="text" class="form-control" id="fm-room-avatar" placeholder="room avatar (url)">
+            </div>
+            <div class="form-group ui-widget">
+                <label for="fm-room-users">Users</label>
+                <input type="text" class="form-control" id="fm-room-users" placeholder="add users to this room">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary btn-fm-room-submit">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
 
 {% block script %}
 <!-- socket.io for client side -->

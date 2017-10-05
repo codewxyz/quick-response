@@ -2,18 +2,15 @@
     //connect global channel
     var socket = io();
     //connect current org channel
-    var socketNs = {
-        GB: io('/GB'),
-        ttm: io('/ttm')
-    }
-    // var socketNs.ttm = io('/ttm');
-    // var socketNs.GB = io('/GB');
+    var socketOrg = {
+        qrgb: io('/qrgb')
+    };
 
     var qrsEvents = {
         message: 'chat message',
         count_online: 'count user online',
         buzz: 'chat buzz'
-    }
+    };
     var alertMsg = {
         change_room_err: 'Cannot change room.',
         validate_err_01: 'Please input message first.'
@@ -42,7 +39,7 @@
     //change chat room
     $('.chat-room').on('click', function () {
         var oldRoom = curRoom;
-        var getNs = $(this).data('ns');
+        var getNs = $(this).data('org');
         var getRoom = $(this).data('room');
 
         if (getNs == 'W') {
@@ -50,7 +47,7 @@
             curSocket = socket;
         } else {
             curRoom = getRoom;
-            curSocket = socketNs[getNs];
+            curSocket = socketOrg[getNs];
         }
 
         loadNewChatContent(oldRoom);
@@ -59,6 +56,78 @@
         $(this).addClass('chat-active');
         $('#r-'+curRoom).find('.chat-room-unread').html('');
     });
+
+    $('#new-room-btn').on('click', function() {
+        $('#qr-modal-room').modal('show');
+    });
+
+    $('.btn-fm-room-submit').on('click', function() {
+        var data = {
+            name: $('#fm-room-name').val(),
+            avatar: $('#fm-room-avatar').val(),
+            users: $('#fm-room-users').val(),
+            org: $('#fm-room-org').val()
+        };
+        $.ajax({
+            url: 'main/aj/add-room',
+            type: 'post',
+            data: data,
+            dataType: 'json',
+            complete: function(xhr, status) {
+                console.log(xhr);
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error creating data.');
+                    $('#qr-alert').modal('show');
+                }
+                $('#qr-modal-room').modal('hide');
+            },
+            success: function(result, status, xhr) {
+                console.log(xhr);
+                if (result.success) {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    displayNewRoom(result.data);
+                    $('#qr-alert').modal('show');
+                } else {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                }
+            }
+        });
+    });
+
+    function displayNewRoom(room) {
+        var temp = '';
+        temp += '<a href="javascript:void(0)" class="chat-room" id="r-${txt0}"';
+        temp += 'data-room="${txt1}" data-ns="${txt2}">';
+        temp += '<span class="chatimg">';
+        temp += '<img src="${txt3}" />';
+        temp += '</span>';
+        temp += '<div class="chat-room-info">';
+        temp += '<div class="chat-room-name">${txt4}</div>';
+        temp += '<div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>';
+        temp += '</div>';
+        temp += '</a>';
+        temp = formatTxt(temp, [
+            room.code,
+            room.code,
+            room.org,
+            room.avatar,
+            room.name
+        ]);
+        $('.chat-room-list').append(temp);
+    }
+
+
+    function formatTxt(temp, txtArr) {
+        for (var i in txtArr) {
+            temp = temp.replace('${txt' + i + '}', txtArr[i]);
+        }
+        return temp;
+    }
 
     //validate input and send to server
     function sendMsg(sk, room) {
@@ -72,7 +141,7 @@
         var msgObj = {
             content: $(selectorList.input_msg).val(),
             room: room,
-            ns: curSocket.nsp
+            org: curSocket.nsp
         };
         sk.emit(roomEvent, msgObj);
         $(selectorList.input_msg).focus();
@@ -120,7 +189,7 @@
         var divRooms = $('.chat-room');
         for (var i = 0; i < divRooms.length; i++) {
         
-            var getNs = $(divRooms[i]).data('ns');
+            var getNs = $(divRooms[i]).data('org');
             var getRoom = $(divRooms[i]).data('room');
 
             if (getNs == 'W') {
@@ -128,7 +197,7 @@
                 // eventCountOnline(socket, worldRoom);
                 chatContent[worldRoom] = $(selectorList.chat_container_inner).html();
             } else {
-                connectRoom(socketNs[getNs], getRoom);
+                connectRoom(socketOrg[getNs], getRoom);
                 chatContent[getRoom] = $(selectorList.chat_container_inner).html();
             }
             eventCountOnline(socket, getRoom);
@@ -165,4 +234,75 @@
             $('#r-'+room).find('.chat-room-online').html(msg.count);
         });
     }
+
+
+    //---------------autocomplete input----------------
+
+    function split(val) {
+        return val.split(/,\s*/);
+    }
+
+    function extractLast(term) {
+        return split(term).pop();
+    }
+
+    $("#fm-room-users")
+        // don't navigate away from the field on tab when selecting an item
+        .on("keydown", function(event) {
+            if (event.keyCode === $.ui.keyCode.TAB &&
+                $(this).autocomplete("instance").menu.active) {
+                event.preventDefault();
+            }
+        })
+        .autocomplete({
+            source: function(request, response) {
+                $.ajax({
+                    url: 'main/aj/user-search',
+                    data: {
+                        term: extractLast(request.term),
+                        org: $('#fm-room-org').val()
+                    },
+                    type: 'get',
+                    complete: function(xhr, status) {
+                        if (xhr.status == 403) {
+                            location.href = '/';
+                            return;
+                        }
+                        if (status == 'error') {
+                            response([{ label: "no data found", value: "no-data" }]);
+                        }
+                    },
+                    success: function(result, status, xhr) {
+                        if (result.success) {
+                            response(result.data);
+                        } else {
+                            response([{ label: "no data found", value: "no-data" }]);
+                        }
+                    }
+                });
+            },
+            search: function() {
+                // custom minLength
+                var term = extractLast(this.value);
+                if (term.length < 3) {
+                    return false;
+                }
+            },
+            focus: function() {
+                // prevent value inserted on focus
+                return false;
+            },
+            select: function(event, ui) {
+                var terms = split(this.value);
+                // remove the current input
+                terms.pop();
+                // add the selected item
+                if (ui.item.value != 'no-data')
+                    terms.push(ui.item.value);
+                // add placeholder to get the comma-and-space at the end
+                terms.push("");
+                this.value = terms.join(", ");
+                return false;
+            }
+        });
 })(jQuery);

@@ -14,6 +14,9 @@ var logger = global.qrLog;
 
 function OrganizationsModel() {
     BaseModel.apply(this, ['organizations']);
+
+    this.reserved = ['global', 'qrgb'];
+    this.defaultCode = 'qrgb';
 }
 
 util.inherits(OrganizationsModel, BaseModel);

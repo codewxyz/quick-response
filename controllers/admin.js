@@ -213,20 +213,20 @@ function updateListHasUser() {
  * @return {Json}     [description]
  */
 exports.addRoom = (req, res) => {
-    var formParam = req.body;
-    if (formParam.code == '' || formParam.name == '' || formParam.org == '') {
-        return res.json({success: false, msg: 'Invalid data.'});
-    }
-    if (formParam.avatar == '') {
-        formParam.avatar = './images/room-public.png';
-    }
+    // var formParam = req.body;
+    // if (formParam.code == '' || formParam.name == '' || formParam.org == '') {
+    //     return res.json({success: false, msg: 'Invalid data.'});
+    // }
+    // if (formParam.avatar == '') {
+    //     formParam.avatar = './images/room-public.png';
+    // }
 
-    models.rooms.create(formParam, (rep) => {
-        if (rep != null) {
-            return res.json({success: true});
-        }
-        return res.json({success: false});
-    });
+    // models.rooms.create(formParam, (rep) => {
+    //     if (rep != null) {
+    //         return res.json({success: true});
+    //     }
+    //     return res.json({success: false});
+    // });
 };
 
 /**
@@ -239,14 +239,13 @@ exports.addOrg = (req, res) => {
     var formParam = req.body;
     //-------------validate data-----------------
     var rg = new RegExp(/^[a-zA-Z0-9\-\_]{3,}$/i);
+    formParam.code = formParam.code.trim();
     if (!rg.test(formParam.code)) {
         return res.json({success: false, msg: 'Code is required and cannot contain special characters (except: "-" and "_").'});            
     }
     if (0 == formParam.name.length || formParam.name.length > 50) {
         return res.json({success: false, msg: 'Name is required and has maximum length of 50 charactrers.'});
     }
-
-    formParam.code = formParam.code.trim();
 
     var commands = [
         ['hmset', formParam.code, formParam],
@@ -299,10 +298,10 @@ exports.addOrgUsers = (req, res) => {
     var commands = [];
 
     for (var i in userList) {
-        commands.push(['sismember', models.lists.getKey(models.lists.keyGUser, true), userList[i]]);
+        commands.push(['sismember', models.lists.keyGUser, userList[i]]);
     }
 
-    models.users.batch(commands)
+    models.lists.batch(commands)
     .then((results) => {//validate username
         logger(results);
         if (results.length != userList.length) {

@@ -12,6 +12,7 @@
     "moment": "^2.18.1",
     "nunjucks": "^3.0.1",
     "serve-static": "^1.12.4",
+    "shortid": "^2.2.8",
     "socket.io": "^2.0.3"
   },
   "scripts": {

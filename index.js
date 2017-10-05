@@ -44,7 +44,8 @@ global.myserver = {
 	express: app
 };
 global.system = {
-	setting: 'test'
+	setting: 'test',
+    shortid: require('shortid')
 };
 
 //load models
@@ -59,8 +60,6 @@ global.models = {
     lists: new (require('./models/lists.js'))()
 };
 global.auth = require('./lib/auth.js');
-var qrs = require('./lib/qr_service.js')(http, sharedsession);
-global.qrService = qrs;
 //----------------LOAD CONTROLLERS----------------------
 var loginController = require('./controllers/login.js');
 var chatController = require('./controllers/chat.js');
@@ -100,6 +99,8 @@ app.post('/login', loginController.doLogin);
 app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
+app.get('/main/aj/user-search', chatController.searchUser);
+app.post('/main/aj/add-room', chatController.addRoom);
 
 app.get('/admin', adminController.show);
 app.get('/admin/search/user', adminController.searchUser);
@@ -126,6 +127,8 @@ function checkDBConnection() {
         }); 
 
         initServer();
+        global.qrService = require('./lib/qr_service.js')(http, sharedsession);
+
         clearInterval(checker);
     }
 }
@@ -158,6 +161,8 @@ function initServer() {
     })
     .catch(logger);
 
+    //checking & creating global organization
+    //add all user to this organization
     models.lists.mexists(models.lists.keyGOrg, 'qrgb')
     .then((hasOrg) => {
         if (hasOrg == 0) {
@@ -169,13 +174,52 @@ function initServer() {
                 ['hmset', obj.code, obj],
                 ['sadd', models.lists.getKey(models.lists.keyGOrg, true), obj.code]
             ];
+
             models.orgs.multi(commands)
             .then((results) => {
                 if (results != null && results.length == commands.length) {
                     logger('global organization created');
-                    return;
+                    //add user to this org                    
+                    return models.lists.getAllMember(models.lists.keyGUser);
+                } else {
+                    return new promise((resolve, reject) => reject(['failed to create global organization', results]));
                 }
-                logger('failed to create global organization');
+            })
+            .then((results) => {
+                if (results.length > 0) {
+                    return models.lists.addOrgUsers('qrgb', results);
+                } else {
+                    return new promise((resolve, reject) => reject('no user to add to global organization'));
+                }
+            })
+            .then((result) => {
+                if (result > 0) {
+                    logger('added users to global organization');
+                } else {
+                    logger('no new users to add to global organization');
+                }
+            })
+            .catch((err) => {
+                logger('init global organization error', err);
+            });
+        } else {
+            models.lists.getAllMember(models.lists.keyGUser)
+            .then((results) => {
+                if (results.length > 0) {
+                    return models.lists.addOrgUsers('qrgb', results);
+                } else {
+                    return new promise((resolve, reject) => reject('no user to add to global organization'));
+                }
+            })
+            .then((result) => {
+                if (result > 0) {
+                    logger('added users to global organization');
+                } else {
+                    logger('no new users to add to global organization');
+                }
+            })
+            .catch((err) => {
+                logger('init global organization error', err);
             });
         }
     })

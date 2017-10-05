@@ -17,6 +17,8 @@ function ListsModel() {
     this.getKeyOrgNUser = (org) => 'orgs:'+org+':non-users';
     this.getKeyRoomUser = (room) => 'rooms:'+room+':users';
     this.getKeyRoomNUser = (room) => 'rooms:'+room+':non-users';
+    this.getKeyUserRoom = (username) => 'users:'+username+':rooms';
+    this.getKeyUserOrg = (username) => 'users:'+username+':orgs';
     this.keyGUser = 'users:global';
     this.keyGOrg = 'orgs:global';
     this.keyGRoom = 'rooms:global';
@@ -26,9 +28,12 @@ function ListsModel() {
         dset('sadd', id, room.code, callback);
     };
 
-    this.createOrgUsers = (org, username, callback) => {
+    this.addOrgUsers = (org, users) => {
     	var id = this.getKeyOrgUser(org);
-        dset('sadd', id, username, callback);
+        return this.create({
+        	code: id,
+        	data: users
+        });
     };
 
     this.createRoomUsers = (room, username, callback) => {
@@ -49,6 +54,11 @@ function ListsModel() {
     this.addRoom = (code, callback) => {
         var id = this.keyGRoom;
         dset('sadd', id, code, callback);
+    };
+
+    this.getAllMember = (id) => {
+    	var key = this.getKey(id);
+    	return this.redis().smembersAsync(key);
     };
 }
 
