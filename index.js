@@ -53,9 +53,6 @@ global.models = {
     users: new (require('./models/users.js'))(),
     rooms: new (require('./models/rooms.js'))(),
     orgs: new (require('./models/organizations.js'))(),
-    orgs_rooms: new (require('./models/orgs_rooms.js'))(),
-    orgs_users: new (require('./models/orgs_users.js'))(),
-    rooms_users: new (require('./models/rooms_users.js'))(),
     chats: new (require('./models/chats.js'))(),
     lists: new (require('./models/lists.js'))()
 };
@@ -160,6 +157,7 @@ function initServer() {
         }
     })
     .catch(logger);
+    
 
     //checking & creating global organization
     //add all user to this organization

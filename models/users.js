@@ -21,6 +21,7 @@ var logger = global.qrLog;
 function UsersModel() {
     BaseModel.apply(this, ['users']);
     this.setPK('username');
+    this.reserved = ['global', 'admin'];
 
 }
 

@@ -122,7 +122,7 @@
         var obj = {
             roomCode: room.code
         };
-        socketOrg[room.org].emit(orgEvents.join_room, obj);
+        socketOrg[room.org].emit(orgEvents.new_room, obj);
     }
 
     function displayNewRoom(room) {
