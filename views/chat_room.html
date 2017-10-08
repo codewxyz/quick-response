@@ -63,7 +63,11 @@
         </span>
         <div class="chat-room-info">
             <div class="chat-room-name">World Room</div>
-            <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
+            <div class="chat-room-status">
+                Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
+                <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
+                <span class="chat-room-unread badge"></span>
+            </div>
         </div>
     </a>
     {% for room in rooms %}
@@ -74,7 +78,11 @@
             </span>
             <div class="chat-room-info">
                 <div class="chat-room-name">{{ room.name }}</div>
-                <div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>
+                <div class="chat-room-status">
+                    Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
+                    <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
+                    <span class="chat-room-unread badge"></span>
+                </div>
             </div>
         </a>
     {% endfor %}
@@ -140,6 +148,30 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
         <button type="button" class="btn btn-primary btn-fm-room-submit">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="qr-modal-room-list-member" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Members</h4>
+      </div>
+      <div class="modal-body">
+        <table class="table table-hover qr-modal-room-list-member-table">
+            <tr>
+                <th></th>
+                <th>Username</th>
+                <th>Status</th>
+            </tr>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

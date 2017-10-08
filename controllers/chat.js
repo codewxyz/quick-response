@@ -1,6 +1,7 @@
 var auth = global.auth;
 var models = global.models;
 var logger = global.qrLog;
+var qrsModel = new (require('../models/QRSModel.js'))();
 
 exports.show = (req, res) => {
     var user = auth.getUser(req);
@@ -13,7 +14,6 @@ exports.show = (req, res) => {
         for (var i in rooms) {
             commands.push(['hgetall', rooms[i]]);
         }
-        logger(commands, rooms);
         if (commands.length > 0) {
             return models.rooms.batch(commands);
         } else {
@@ -27,15 +27,12 @@ exports.show = (req, res) => {
         for (var i in rooms) {
     		chatRooms.push(rooms[i]);
         }
-        logger(chatRooms);
         return res.render('chat_room.html', { user: user, rooms: chatRooms });
     })
     .catch((err) => {
-        logger('char room ',err);
+        logger(err);
         return res.status(500).send('Server error.');
     });
-
-    // return res.render('chat_room.html', { user: user, rooms: chatRooms });
 };
 
 
@@ -103,7 +100,8 @@ exports.addRoom = (req, res) => {
         }
     })
     .then((createResult) => {
-        if (createResult != null && createResult.length == commands.length) {
+        if ((createResult != null) && 
+            (createResult.length == commands.length)) {
             //add user to this room
             addUsersToRoom(room, userList);
             return res.json({success: true, msg: 'Created successfully.', data: room});
@@ -118,6 +116,62 @@ exports.addRoom = (req, res) => {
 };
 
 
+exports.getRoomMembers = (req, res) => {
+    if (!req.body) {
+        return res.json({success: false, msg: 'no request param', data: []});
+    }
+    var roomCode = req.body.roomCode;
+    var roomKey = models.lists.getKeyRoomUser(roomCode);
+    if (roomCode == models.rooms.defaultCode) {
+        roomKey = models.lists.keyGUser;
+    }
+    var userList = [];
+
+    models.lists.custom('smembers', roomKey)
+    .then((results) => {
+        if (results.length > 0) {
+            var commands = [];
+            results.forEach((username) => {
+                commands.push(['hgetall', username]);
+            });
+            return models.users.batch(commands);
+        } else {
+            return new promise((resolve, reject) => resolve([]));
+        }
+    })
+    .then((results) => {
+        if (getLength(results) > 0) {
+            userList = results;
+            var commands = [];
+            results.forEach((user) => {
+                commands.push(['sismember', qrsModel.keyGUserOnline, user.username]);
+            });
+            return qrsModel.batch(commands);
+        } else {
+            return new promise((resolve, reject) => resolve([]));
+        }
+    })
+    .then((results) => {
+        if ((getLength(results) > 0) && (getLength(results) == userList.length)) {
+
+            results.forEach((status, idx) => {
+                if (status == 1) {
+                    userList[idx].status = 'online';
+                } else {
+                    userList[idx].status = 'offline';
+                }
+            });
+            return res.json({success: true, data: userList});
+        } else {
+            return new promise((resolve, reject) => reject([]));
+        }
+    })
+    .catch((err) => {
+        logger(err);
+        return res.json({success: false, msg: 'Failed to get room memebers.'});
+    });
+
+};
 exports.searchUser = (req, res) => {
     if (!req.query) {
         return res.json({success: false, msg: 'no request param', data: []});
@@ -134,7 +188,6 @@ exports.searchUser = (req, res) => {
     };
     models.lists.count(keyUserList, 'set')
     .then((total) => {
-        logger(total);
         if (total > 0) {
             searchOption.count = total;
             return models.lists.search(searchOption);
@@ -145,7 +198,6 @@ exports.searchUser = (req, res) => {
         }
     })
     .then((results) => {
-        logger('search list user count '+results.length);
         var dt = [];
         if (results[1].length > 0) {
             dt = results[1];
@@ -183,30 +235,31 @@ function addUsersToRoom(room, userList) {
             return new promise((resolve, reject) => reject('Error checking username.'));
         }
         var finalList = [];
-        for (var i in results) {
-            if (results[i] == 1) {
-                finalList.push(userList[i]);
+        results.map((val, idx) => {
+            if (val == 1) {
+                finalList.push(userList[idx]);
             }
-        }
+        });
+
         if (finalList.length > 0) {
             commands = [];
-            for (var i in results) {
-                commands.push(['sadd', models.lists.getKeyRoomUser(roomCode), finalList[i]]);
-                commands.push(['sadd', models.lists.getKeyUserRoom(finalList[i]), roomCode]);
-            }
+            finalList.forEach((username) => {
+                    commands.push(['sadd', models.lists.getKeyRoomUser(roomCode), username]);
+                    commands.push(['sadd', models.lists.getKeyUserRoom(username), roomCode]);
+            });
             return models.lists.batch(commands);
         } else {
             return new promise((resolve, reject) => reject('List username is not valid.'));
         }
     })
     .then((result) => {//add username to list
-        if (result.length > 0) {            
-            models.lists.redis().sdiffstore(
-                models.lists.getKey(models.lists.getKeyRoomNUser(roomCode)), 
+        if (result.length > 0) {    
+            //update list user in room        
+            models.lists.custom('sdiffstore', models.lists.getKeyRoomNUser(roomCode), 
                 models.lists.getKey(models.lists.getKeyOrgUser(roomOrg)), 
-                models.lists.getKey(models.lists.getKeyRoomUser(roomCode)), 
-                (err, rep)=>logger('stored diff user org', err, rep)
-            );
+                models.lists.getKey(models.lists.getKeyRoomUser(roomCode)))
+            .catch(logger);
+
             logger('end adding users to room', 'successfully', result.length, commands.length);
         } else {
             logger('end adding users to room', 'These users has been added.');
@@ -215,4 +268,14 @@ function addUsersToRoom(room, userList) {
     .catch((err) => {
         logger(err);
     });
+}
+function getLength(obj) {
+    if (typeof(obj) == 'object') {
+        if (Array.isArray(obj)) {
+            return obj.length;
+        } else {
+            return Object.keys(obj).length;
+        }
+    }
+    return 0;
 }

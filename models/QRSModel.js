@@ -10,7 +10,6 @@ function QRSModel() {
     this.keyDefaultRoom = 'room';
     this.keyGUserOnline = 'online:users';
     this.getKeyUserDevice = (username) => 'users:' + username + ':devices';
-    this.getKeyUserDeviceId = (username, clientId) => 'users:' + username + ':devices:'+clientId;
     this.getKeyUserRoomOnline = (roomCode) => 'online:rooms:' + roomCode;
     this.getKeyUserOrgOnline = (orgCode) => 'online:orgs:' + orgCode;
 
@@ -26,7 +25,7 @@ function QRSModel() {
         } else {
             return db[command + 'Async'](key, args);
         }
-    }
+    };
 
     this.cleanRedis = () => {
         db.keysAsync(redisPrefix + '*')
@@ -38,47 +37,54 @@ function QRSModel() {
                     db.delAsync(results);
             })
             .catch(logger);
-    }
+    };
 
     this.userOnline = (username, socket) => {
         var commands = [];
         commands.push(['sadd', this.getKeyUserRoomOnline(this.keyDefaultRoom), username]);
         commands.push(['sadd', this.keyGUserOnline, username]);
         commands.push(['sadd', this.getKeyUserDevice(username), socket.id]);
-        commands.push(['hset', this.getKeyUserDeviceId(username, socket.id), ['qrgb', JSON.stringify(socket)]]);
 
         this.multi(commands)
-        .catch(logger);
+            .catch(logger);
     };
 
     this.userOffline = (username, clientId) => {
         return new promise((mresolve, mreject) => {
             var commands = [];
-            commands.push(['smembers', mainModels.lists.getKeyUserRoom(username)]);
-            commands.push(['scard', this.getKeyUserDevice(username)]);
-            commands.push(['keys', getKey('users:*')]);
-            mainModels.lists.multi(commands)
-                .then((results) => {//get user's rooms and delete qr-service keys of user
-                    if (results.length == 3) {
-                        var roomKeys = results[0];
-                        var deviceCount = results[1];
-                        var userKeys = results[2];
-                        if (deviceCount == 0) {//user is logout completely
-                            userKeys = userKeys.map((val) => {
-                                return getKey(val);
-                            });
-                            commands = [];
-                            for (var i in roomKeys) {
-                                commands.push(['srem', this.getKeyUserRoomOnline(roomKeys[i]), username]);
-                            }
-                            commands.push(['del', userKeys]);
-                            commands.push(['srem', this.getKeyUserRoomOnline(this.keyDefaultRoom), username]);
-                            commands.push(['srem', this.keyGUserOnline, username]);
-                            return this.multi(commands);
-                        } else {//user still login in another device
-                            return db.sremAsync(this.getKeyUserDevice(username), clientId);
-                        }
 
+            db.scardAsync(this.getKeyUserDevice(username))
+                .then((result) => {
+                    if (result == 1) {
+                        return mainModels.lists.custom('smembers', mainModels.lists.getKeyUserRoom(username));
+                    } else {
+                        return new promise((resolve, reject) => {
+                            db.sremAsync(this.getKeyUserDevice(username), clientId)
+                            .then((result) => {
+                                mreject(username+' not offline.');
+                            })
+                            .catch(mreject);
+                        });
+                    }
+                })
+                .then((results) => {
+                    if (results.length > 0) {
+                        for (var i in results) {
+                            commands.push(['srem', this.getKeyUserRoomOnline(results[i]), username]);
+                        }
+                        return db.keysAsync(this.getKey('users:*'));
+                    } else {
+                        return new promise((resolve, reject) => resolve([]));
+                    }
+                })
+                .then((results) => { //get user's rooms and delete qr-service keys of user
+                    if (results.length > 0) {
+                        commands.push(['del', results]);
+                        commands.push(['srem', this.getKeyUserRoomOnline(this.keyDefaultRoom), username]);
+                        commands.push(['srem', this.keyGUserOnline, username]);
+                        commands.push(['srem', this.getKeyUserDevice(username), clientId]);
+
+                        return this.multi(commands);
                     } else {
                         return new promise((resolve, reject) => resolve([]));
                     }
@@ -92,15 +98,36 @@ function QRSModel() {
         });
     };
 
-    this.joinUsersToRoom = (roomCode, orgCode) => {
-        models.lists.custom('smembers', models.lists.getKeyRoomUser(roomCode))
-            .then((usernames) => {
-                var commands = [];
-                for (var i in usernames) {
-                    commands.push(['hget', this.getKeyUserDeviceId(usernames[i], roomCode), orgCode]);
-                }
-            })
-    }
+    this.joinUsersToRoom = (roomCode) => {
+        return new promise((mresolve, mreject) => {
+            var roomInfo = null;
+            mainModels.rooms.custom('hgetall', roomCode)
+                .then((result) => {
+                    if (getLength(result) > 0) {
+                        roomInfo = result;
+                        return mainModels.lists.custom('smembers', mainModels.lists.getKeyRoomUser(roomCode));
+                    } else {
+                        return new promise((resolve, reject) => resolve([]));
+                    }
+                })
+                .then((usernames) => {
+                    var commands = [];
+                    for (var i in usernames) {
+                        commands.push(['smembers', this.getKeyUserDevice(usernames[i])]);
+                    }
+                    if (commands.length > 0) {
+                        return this.batch(commands);
+                    } else {
+                        return new promise((resolve, reject) => resolve([]));
+                    }
+                })
+                .then((results) => {
+                    results.push(roomInfo);
+                    mresolve(results);
+                })
+                .catch(mreject);
+        });
+    };
 
     /**
      * perform db commands in transaction
@@ -197,6 +224,16 @@ function search(type, val) {
 
 //----------------------------------SUPPORT FUNCTIONS-----------------------
 //--------------------------------------------------------------------------
+function getLength(obj) {
+    if (typeof(obj) == 'object') {
+        if (Array.isArray(obj)) {
+            return obj.length;
+        } else {
+            return Object.keys(obj).length;
+        }
+    }
+    return 0;
+}
 function getKey(id) {
     return checkKey(id) ? id.replace(redisPrefix, '') : id;
 }

@@ -29,7 +29,6 @@ exports.getUsers = (req, res) => {
         return getRecords('users', users, res);
     })
     .then((results) => {
-        logger('get list user count '+results.length);
         return res.json({success: true, data: results});
     })
     .catch((err) => {
@@ -58,7 +57,6 @@ exports.searchUser = (req, res) => {
     };
     models.lists.count(keyUserList, 'set')
     .then((total) => {
-        logger(total);
         if (total > 0) {
             searchOption.count = total;
             return models.lists.search(searchOption);
@@ -69,7 +67,6 @@ exports.searchUser = (req, res) => {
         }
     })
     .then((results) => {
-        logger('search list user count '+results.length);
         var dt = [];
         if (results[1].length > 0) {
             dt = results[1];
@@ -90,11 +87,9 @@ exports.getOrgs = (req, res) => {
     //get list chat room user can access
     models.orgs.all()
     .then((orgs) => {
-        logger(orgs);
         return getRecords('orgs', orgs, res);
     })
     .then((results) => {
-        logger('get list org count '+results.length);
         return res.json({success: true, data: results});
     })
     .catch((err) => {
@@ -115,7 +110,6 @@ exports.getRooms = (req, res) => {
         return getRecords('rooms', rooms, res);
     })
     .then((results) => {
-        logger('get list room count '+results.length);
         return res.json({success: true, data: results});
     })
     .catch((err) => {
@@ -152,7 +146,8 @@ exports.addUser = (req, res) => {
 
     var commands = [
         ['hmset', formParam.username, formParam],//create user
-        ['sadd', models.lists.getKey(models.lists.keyGUser, true), formParam.username]//add user to global list
+        ['sadd', models.lists.getKey(models.lists.keyGUser, true), formParam.username],//add user to global list
+        ['sadd', models.lists.getKey(models.lists.getKeyOrgUser(models.orgs.defaultCode), true), formParam.username]//add user to default org
     ];
 
     models.lists.mexists(models.lists.keyGUser, formParam.username)
@@ -185,12 +180,8 @@ exports.addUser = (req, res) => {
 
 function updateListHasUser() {
     logger('start to store diff user...', models.lists.keyGOrg);
-    models.lists.redis().smembers(models.lists.getKey(models.lists.keyGOrg), (err, reps) => {
-        if (err) {
-            logger(err);
-            return;
-        }
-
+    models.lists.custom('smembers', models.lists.getKey(models.lists.keyGOrg))
+    .then((reps) => {
         var commands = [];
         for (var i in reps) {
             commands.push(['sdiffstore', models.lists.getKey(models.lists.getKeyOrgNUser(reps[i])), 
@@ -203,7 +194,8 @@ function updateListHasUser() {
                 logger('end store diff user...', err, rep);
             });
 
-    });
+    })
+    .catch(logger);
 }
 
 /**
@@ -249,7 +241,11 @@ exports.addOrg = (req, res) => {
 
     var commands = [
         ['hmset', formParam.code, formParam],
-        ['sadd', models.lists.getKey(models.lists.keyGOrg, true), formParam.code]
+        ['sadd', models.lists.getKey(models.lists.keyGOrg, true), formParam.code],
+        ['sadd', models.lists.getKey(models.lists.getKeyOrgUser(formParam.code), true), 'admin'],//add admin to new org
+        ['sdiffstore',models.lists.getKey(models.lists.getKeyOrgNUser(formParam.code), true), models.lists.getKey(models.lists.keyGUser),  
+            models.lists.getKey(models.lists.getKeyOrgUser(formParam.code))
+        ]
     ];
 
     models.lists.mexists(models.lists.keyGOrg, formParam.code)
@@ -263,6 +259,7 @@ exports.addOrg = (req, res) => {
         }
     })
     .then((createResult) => {
+        logger(createResult);
         if (createResult != null && createResult.length == commands.length) {
             return res.json({success: true, msg: 'Created successfully.'});
         } else {
@@ -303,7 +300,6 @@ exports.addOrgUsers = (req, res) => {
 
     models.lists.batch(commands)
     .then((results) => {//validate username
-        logger(results);
         if (results.length != userList.length) {
             return new promise((resolve, reject) => reject('Error checking username.'));
         }
@@ -325,7 +321,11 @@ exports.addOrgUsers = (req, res) => {
     })
     .then((result) => {//add username to list
         if (result > 0) {
-            updateListOrg(orgCode);
+            //update org user list
+            models.lists.custom('sdiffstore', models.lists.getKeyOrgNUser(orgCode), 
+                [models.lists.getKey(models.lists.keyGUser), models.lists.getKey(models.lists.getKeyOrgUser(orgCode))])
+            .catch(logger);
+
             return res.json({success: true, msg: 'Added successfully.'});
         } else {
             return res.json({success: true, msg: 'These users has been added.'});
@@ -336,25 +336,3 @@ exports.addOrgUsers = (req, res) => {
         return res.json({success: false, msg: 'Failed to add users.'});
     });
 };
-
-function updateListOrg(orgCode) {
-    models.lists.redis().sdiffstore(models.lists.getKey(models.lists.getKeyOrgNUser(orgCode)), 
-        models.lists.getKey(models.lists.keyGUser), 
-        models.lists.getKey(models.lists.getKeyOrgUser(orgCode)), 
-        (err, rep)=>logger('stored diff user org', err, rep));
-}
-
-// exports.addOrgUser = (req, res) => {
-//     var formParam = req.body;
-//     logger(formParam);
-//     if (formParam.code == '' || formParam.name == '') {
-//         return res.json({success: false, msg: 'Invalid data.'});
-//     }
-
-//     models.orgs.create(formParam, (rep) => {
-//         if (rep != null) {
-//             return res.json({success: true});
-//         }
-//         return res.json({success: false});
-//     });
-// };

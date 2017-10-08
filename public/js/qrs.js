@@ -1,66 +1,63 @@
 (function($) {
     //connect global channel
-    var socket = io();
+    var g_socketOpts = {
+        path: '/qrchat',
+        reconnectionAttempts: 5
+    };
+    var g_socket = io('/', g_socketOpts);
     //connect current org channel
-    var socketOrg = {
-        qrgb: io('/qrgb')
+    var g_socketOrg = {
+        qrgb: io('/qrgb', g_socketOpts)
     };
 
-    var roomEvents = {
+    var g_roomEvents = {
         message: 'chat message',
         count_online: 'count user online',
         buzz: 'chat buzz'
     };
-    var orgEvents = {
+    var g_orgEvents = {
         join_room: 'user join room',
         new_room: 'new room created'
     };
-    var alertMsg = {
+    var g_socketClientEvents = {
+        connect: 'connect',
+        disconnect: 'disconnect',
+        error: 'error',
+        connect_error: 'connect_error',
+        connect_timeout: 'connect_timeout',
+        reconnect: 'reconnect',
+        reconnect_attempt: 'reconnect_attempt',
+        reconnecting: 'reconnecting',
+        reconnecting_error: 'reconnecting_error',
+        reconnecting_failed: 'reconnecting_failed',
+        ping: 'ping',
+        pong: 'pong'
+    };
+    var g_alertMsg = {
         change_room_err: 'Cannot change room.',
         validate_err_01: 'Please input message first.'
     };
-    var selectorList = {
+    var g_selectorList = {
         chat_container_inner: '.chatbody table tbody',
         chat_container: '.chatbody',
         input_msg: '.input-chat-msg'
     };
 
-    var worldRoom = 'room';
-    var user = $('#user').val();
-    var curRoom = worldRoom;
-    var curSocket = socket;
-    var chatContent = {};
+    var g_worldRoom = 'room';
+    var g_user = $('#user').val();
+    var g_curRoom = g_worldRoom;
+    var g_curSocket = g_socket;
+    var g_chatContent = {};
 
     connectRooms();
 
-    setOrgEvents();
+    setSocketEvents();
 
     //send message to server
     $('.btn-chat-submit').on('click', function() {
-        sendMsg(curSocket, curRoom);
-        $(selectorList.input_msg).val('');
+        sendMsg(g_curSocket, g_curRoom);
+        $(g_selectorList.input_msg).val('');
         return false;
-    });
-
-    //change chat room
-    $('.chat-room').on('click', function() {
-        var oldRoom = curRoom;
-        var getNs = $(this).data('org');
-        var getRoom = $(this).data('room');
-
-        if (getNs == 'W') {
-            curRoom = worldRoom;
-            curSocket = socket;
-        } else {
-            curRoom = getRoom;
-            curSocket = socketOrg[getNs];
-        }
-
-        loadNewChatContent(oldRoom);
-
-        $('.chat-active').removeClass('chat-active');
-        $(this).addClass('chat-active');
-        $('#r-' + curRoom).find('.chat-room-unread').html('');
     });
 
     $('#new-room-btn').on('click', function() {
@@ -80,7 +77,7 @@
             data: data,
             dataType: 'json',
             complete: function(xhr, status) {
-                console.log(xhr);
+                
                 if (xhr.status == 403) {
                     location.href = '/';
                     return;
@@ -92,7 +89,7 @@
                 $('#qr-modal-room').modal('hide');
             },
             success: function(result, status, xhr) {
-                console.log(xhr);
+                
                 if (result.success) {
                     $('#qr-alert .modal-body').html(result.msg);
                     displayNewRoom(result.data);
@@ -106,23 +103,166 @@
         });
     });
 
-    function setOrgEvents() {
-        for (var i in socketOrg) {
-            socketOrg[i].on(orgEvents.new_room, function(obj) {
-                if ( ($('#user').val() == obj.username) && 
+    $('.chat-room').on('click', function() {
+        var getNs = $(this).data('org');
+        var getRoom = $(this).data('room');
+        changeChatRoom(getNs, getRoom, this);
+    });
+
+    $('.chat-room-list-member').on('click', function() {
+        var parent = $(this).parents().filter('.chat-room');
+        var roomCode = parent.data('room');
+        var data = {
+            roomCode: roomCode
+        };
+        getMemberList(data);
+    });
+
+    function getMemberList(data) {
+        $.ajax({
+            url: 'main/aj/room-members',
+            type: 'post',
+            data: data,
+            dataType: 'json',
+            complete: function(xhr, status) {
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error creating data.');
+                    $('#qr-alert').modal('show');
+                }
+                $('#qr-modal-room').modal('hide');
+            },
+            success: function(result, status, xhr) {
+                if (result.success) {
+                    var str = "";
+                    str += '<tr>';
+                    str += '<th></th>';
+                    str += '<th>Username</th>';
+                    str += '<th>Status</th>';
+                    str += '</tr>';
+                    $('.qr-modal-room-list-member-table').html(str);
+                    result.data.forEach((val) => {
+                        var temp = '';
+                        temp += '<tr>';
+                        temp += '<td>';
+                        temp += '<img src="${txt0}" alt="avatar" class="img-responsive img-thumbnail" width="50px"/>';
+                        temp += '</td>';
+                        temp += '<td>';
+                        temp += '${txt1}';
+                        temp += '</td>';
+                        temp += '<td>';
+                        temp += '${txt2}';
+                        temp += '</td>';
+                        temp += '</tr>';
+                        temp = formatTxt(temp, [
+                            val.avatar,
+                            val.username,
+                            val.status
+                        ]);
+                        $('.qr-modal-room-list-member-table').append(temp);
+
+                    });
+                    $('#qr-modal-room-list-member').modal('show');
+                } else {
+                    $('#qr-modal-room-list-member .modal-body').html(result.msg);
+                    $('#qr-modal-room-list-member').modal('show');
+                }
+            }
+        });
+    }
+
+    function changeChatRoom(getNs, getRoom, e) {
+        var oldRoom = g_curRoom;
+
+        if (getNs == 'W') {
+            g_curRoom = g_worldRoom;
+            g_curSocket = g_socket;
+        } else {
+            g_curRoom = getRoom;
+            g_curSocket = g_socketOrg[getNs];
+        }
+
+        loadNewChatContent(oldRoom);
+
+        $('.chat-active').removeClass('chat-active');
+        $(e).addClass('chat-active');
+        $('#r-' + g_curRoom).find('.chat-room-unread').html('');
+    }
+
+    function setSocketEvents() {
+        //-----------for org sockets------------
+        for (var i in g_socketOrg) {
+            //room events
+            g_socketOrg[i].on(g_roomEvents.message, function(msg) {
+                insertChat(msg, msg.roomCode);
+            });
+
+            //custom org event
+            g_socketOrg[i].on(g_orgEvents.new_room, (obj) => {
+                if ( (g_user == obj.username) && 
                     ($('#r-'+obj.room.code).length == 0) ) {
                     displayNewRoom(obj.room);
-                    notifyJoinRoom(obj.room);
+
                 }
             });
+
+            //default org events
+            g_socketOrg[i].on(g_socketClientEvents.connect, () => {
+                console.log('socket connected');
+                console.log(g_socketOrg[i].json.id);
+            });
+
+            g_socketOrg[i].on(g_socketClientEvents.connect_timeout, () => {
+                console.log('socket connection timeout');
+            });
+
+            g_socketOrg[i].on(g_socketClientEvents.reconnecting_failed, () => {
+                console.log('failed to reconnect socket');
+                // location.href = '/';
+            });
+
+            g_socketOrg[i].on(g_socketClientEvents.error, (err) => {
+                console.log('socket connection error');
+                console.log(err);
+                // location.href = '/';
+            });
         }
+
+        //------for default socket-----------
+        g_socket.on(g_roomEvents.message, function(msg) {
+            insertChat(msg, msg.roomCode);
+        });
+
+        g_socket.on(g_roomEvents.count_online, function(msg) {
+            $('#r-' + msg.roomCode).find('.chat-room-online').html(msg.count);
+        });
+
+        g_socket.on(g_socketClientEvents.connect_timeout, () => {
+            console.log('socket connection timeout');
+        });
+        g_socket.on(g_socketClientEvents.reconnecting_failed, () => {
+            console.log('failed to reconnect socket');
+            location.href = '/';
+        });
+        g_socket.on(g_socketClientEvents.error, (err) => {
+            console.log('socket connection error');
+            console.log(err);
+            location.href = '/';
+        });
+        g_socket.on(g_socketClientEvents.connect, () => {
+            console.log('socket connected');
+            console.log(g_socket.json.id);
+        });
     }
 
     function notifyJoinRoom(room) {
         var obj = {
             roomCode: room.code
         };
-        socketOrg[room.org].emit(orgEvents.new_room, obj);
+        g_socketOrg[room.org].emit(g_orgEvents.new_room, obj);
     }
 
     function displayNewRoom(room) {
@@ -134,7 +274,11 @@
         temp += '</span>';
         temp += '<div class="chat-room-info">';
         temp += '<div class="chat-room-name">${txt4}</div>';
-        temp += '<div class="chat-room-status">Online: <span class="chat-room-online">0</span> <span class="chat-room-unread badge"></span></div>';
+        temp += '<div class="chat-room-status">';
+        temp += 'Online: <span class="chat-room-online">1</span>&nbsp;&nbsp;';
+        temp += '<i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;';
+        temp += '<span class="chat-room-unread badge"></span>';
+        temp += '</div>';
         temp += '</div>';
         temp += '</a>';
         temp = formatTxt(temp, [
@@ -144,7 +288,28 @@
             room.avatar,
             room.name
         ]);
-        $('.chat-room-list').append(temp);
+        var parseHtml = $.parseHTML($.trim(temp));
+        $('.chat-room-list').append(parseHtml);
+
+        //add event to this room DOM node
+        $(parseHtml).on('click', function() {
+            var getNs = $(this).data('org');
+            var getRoom = $(this).data('room');
+            changeChatRoom(getNs, getRoom, this);
+        });
+
+        $(parseHtml).find('.chat-room-list-member').on('click', function() {
+            var parent = $(this).parents().filter('.chat-room');
+            var roomCode = parent.data('room');
+            var data = {
+                roomCode: roomCode
+            };
+            getMemberList(data);
+        });
+        //change seleted room to this room
+        changeChatRoom(room.org, room.code, parseHtml);
+        //save chat content of this room
+        g_chatContent[room.code] = $(g_selectorList.chat_container_inner).html();
     }
 
 
@@ -157,26 +322,24 @@
 
     //validate input and send to server
     function sendMsg(sk, room) {
-        console.log(curSocket);
-        var content = $(selectorList.input_msg).val();
-        var roomEvent = createChatEvent(room, roomEvents.message);
+        var content = $(g_selectorList.input_msg).val();
         if (content == '') {
-            alert(alertMsg.validate_err_01);
+            alert(g_alertMsg.validate_err_01);
             return;
         }
         var msgObj = {
-            content: $(selectorList.input_msg).val(),
-            room: room,
-            org: curSocket.nsp
+            content: $(g_selectorList.input_msg).val(),
+            roomCode: room,
+            orgCode: g_curSocket.nsp
         };
-        sk.emit(roomEvent, msgObj);
-        $(selectorList.input_msg).focus();
+        sk.emit(g_roomEvents.message, msgObj);
+        $(g_selectorList.input_msg).focus();
     }
 
     //receive message and display/store to target room
     function insertChat(obj, room) {
         var selfClass = '';
-        if (user == obj.user) {
+        if (g_user == obj.user) {
             selfClass = ['my-avatar', 'my-msg'];
         }
         var str = "";
@@ -198,16 +361,15 @@
         ]);
 
         //check to store or display this message                    
-        if (room == curRoom) {
-            $(selectorList.chat_container_inner).append(temp);
+        if (room == g_curRoom) {
+            $(g_selectorList.chat_container_inner).append(temp);
             //auto scroll to newest message on screen
-            $(selectorList.chat_container).animate({ scrollTop: $(selectorList.chat_container_inner).height() }, 1000);
+            $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
         } else {
-            console.log(temp);
-            if (chatContent[room] != undefined) {
-                chatContent[room] += temp;
+            if (g_chatContent[room] != undefined) {
+                g_chatContent[room] += temp;
             } else {
-                chatContent[room] = temp;
+                g_chatContent[room] = temp;
             }
 
             var unreadhHtml = $('#r-' + room).find('.chat-room-unread').html();
@@ -226,48 +388,32 @@
 
             var getNs = $(divRooms[i]).data('org');
             var getRoom = $(divRooms[i]).data('room');
+            var getSk = null;
 
             if (getNs == 'W') {
-                connectRoom(socket, worldRoom);
-                // eventCountOnline(socket, worldRoom);
-                chatContent[worldRoom] = $(selectorList.chat_container_inner).html();
+                getSk = g_socket;
+                getRoom = g_worldRoom;
             } else {
-                connectRoom(socketOrg[getNs], getRoom);
-                chatContent[getRoom] = $(selectorList.chat_container_inner).html();
+                getSk = g_socketOrg[getNs];
             }
-            eventCountOnline(socket, getRoom);
+            g_chatContent[getRoom] = $(g_selectorList.chat_container_inner).html();
         }
-    }
-
-    //listen on event of each room
-    function connectRoom(sk, room) {
-        var roomEvent = createChatEvent(room, roomEvents.message);
-        sk.on(roomEvent, function(msg) {
-            insertChat(msg, room);
-        });
     }
 
     //get chat event code
-    function createChatEvent(room, txtEvent) {
-        return room == worldRoom ? txtEvent : room + '::' + txtEvent;
-    }
+    // function createChatEvent(room, txtEvent) {
+    //     return (room == g_worldRoom) ? txtEvent : (room + '::' + txtEvent);
+    // }
 
     function loadNewChatContent(old) {
         //store current chat room content
-        chatContent[old] = $(selectorList.chat_container_inner).html();
+        g_chatContent[old] = $(g_selectorList.chat_container_inner).html();
         //get selected chat room content if exist & display
-        if (chatContent[curRoom] != undefined) {
-            $(selectorList.chat_container_inner).html(chatContent[curRoom]);
+        if (g_chatContent[g_curRoom] != undefined) {
+            $(g_selectorList.chat_container_inner).html(g_chatContent[g_curRoom]);
         } else {
-            $(selectorList.chat_container_inner).html('');
+            $(g_selectorList.chat_container_inner).html('');
         }
-    }
-
-    function eventCountOnline(sk, room) {
-        var roomEvent = createChatEvent(room, roomEvents.count_online);
-        sk.on(roomEvent, function(msg) {
-            $('#r-' + room).find('.chat-room-online').html(msg.count);
-        });
     }
 
 

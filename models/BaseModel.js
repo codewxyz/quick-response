@@ -34,7 +34,7 @@ function BaseModel() {
         } else {
             return db[command+'Async'](key, args);
         }
-    }
+    };
 
     /**
      * perform db commands in transaction
@@ -48,6 +48,7 @@ function BaseModel() {
         for (var i in commands) {
             commandList.push(prepareMulti(commands[i]));
         }
+        logger(commandList);
 
         return db.multi(commandList).execAsync();
     };
@@ -247,8 +248,9 @@ function prepareMulti(vals) {
 
         default:
             args.push(getKey(vals[1]));
-            if (vals[2] != undefined)
+            if (vals.length >= 3)
                 args.push(vals.slice(2));
+
             break;
     }
 

@@ -98,6 +98,7 @@ app.post('/logout', loginController.doLogout);
 app.get('/main', chatController.show);
 app.get('/main/aj/user-search', chatController.searchUser);
 app.post('/main/aj/add-room', chatController.addRoom);
+app.post('/main/aj/room-members', chatController.getRoomMembers);
 
 app.get('/admin', adminController.show);
 app.get('/admin/search/user', adminController.searchUser);
@@ -220,5 +221,5 @@ function initServer() {
                 logger('init global organization error', err);
             });
         }
-    })
+    });
 }

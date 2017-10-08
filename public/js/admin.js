@@ -160,7 +160,6 @@
             data: data,
             dataType: 'json',
             complete: function(xhr, status) {
-                console.log(xhr);
                 if (xhr.status == 403) {
                     location.href = '/';
                     return;
@@ -172,7 +171,6 @@
                 $('#qr-fm-search').modal('hide');
             },
             success: function(result, status, xhr) {
-                console.log(xhr);
                 if (result.success) {
                     $('#qr-alert .modal-body').html(result.msg);
                     $('#qr-alert').modal('show');
@@ -218,7 +216,6 @@
             data: data,
             dataType: 'json',
             complete: function(xhr, status) {
-                console.log(xhr);
                 if (xhr.status == 403) {
                     location.href = '/';
                     return;
@@ -230,7 +227,6 @@
                 $('#qr-modal-form').modal('hide');
             },
             success: function(result, status, xhr) {
-                console.log(xhr);
                 if (result.success) {
                     $('#qr-alert .modal-body').html(result.msg);
                     getData(type);
@@ -250,7 +246,6 @@
             type: 'get',
             dataType: 'json',
             complete: function(xhr, status) {
-                console.log(xhr);
                 if (xhr.status == 403) {
                     location.href = '/';
                     return;
@@ -261,7 +256,6 @@
                 setTimeout(hideLoading, 1000);
             },
             success: function(result, status, xhr) {
-                console.log(xhr.status);
                 if (!result.success) {
                     $('.chatbody table tbody').html(result.msg);
                     return;
@@ -283,7 +277,6 @@
             url: ajaxGetData.orgs.urlget,
             type: 'get',
             complete: function(xhr, status) {
-                console.log(xhr);
                 if (xhr.status == 403) {
                     location.href = '/';
                     return;
@@ -294,7 +287,6 @@
                 }
             },
             success: function(result, status, xhr) {
-                console.log(status);
                 if (!result.success) {
                     $('#fm-room-org').html('<option value="">' + result.msg + '</option>');
                     // $('.chatbody table tbody').html(result.msg);

@@ -17,6 +17,7 @@ var logger = global.qrLog;
 function RoomsModel() {
     BaseModel.apply(this, ['rooms']);
     this.reserved = ['global', 'room'];
+    this.defaultCode = 'room';
 }
 
 util.inherits(RoomsModel, BaseModel);

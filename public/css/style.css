@@ -11,6 +11,12 @@ body {
   box-shadow: 3px 6px 12px gray
 }
 
+.chat-room-list {
+	height: 450px;
+	overflow: auto;
+	border-bottom: 3px solid #99ccff;
+}
+
 .chat-room{
   display: block;
   border: 2px solid lightgray;

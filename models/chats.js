@@ -10,7 +10,7 @@ var util = require('util');
 var logger = global.qrLog;
 
 function ChatsModel() {
-    BaseModel.apply(this, ['chats', 'set']);
+    BaseModel.apply(this, ['chats', 'sorted_set']);
 }
 
 util.inherits(ChatsModel, BaseModel);
