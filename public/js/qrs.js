@@ -77,8 +77,8 @@
     });
 
     $('.chat-room-add-member').on('click', function() {
-        $('#fm-add-member-room').val($(this).parents().filter('.chat-room-name').html());
-        $('#fm-add-member-room-code').val($(this).parents().filter('.chat-room').data('code'));
+        $('#fm-add-member-room').val($(this).parent().parent().find('.chat-room-name').html());
+        $('#fm-add-member-room-code').val($(this).parents().filter('.chat-room').data('room'));
         $('#fm-add-member-org-code').val($(this).parents().filter('.chat-room').data('org'));
         $('#qr-modal-add-member').modal('show');
     });
@@ -128,10 +128,10 @@
     });
 
     $('.btn-fm-add-member-submit').on('click', function() {
-        orgCode = $('#fm-add-member-org-code').val();
         var data = {
             roomCode: $('#fm-add-member-room-code').val(),
-            users: $('#fm-add-member-users').val(),
+            orgCode: $('#fm-add-member-org-code').val(),
+            users: $('#fm-add-member-users').val()
         };
         $.ajax({
             url: 'main/aj/add-members',
@@ -159,7 +159,7 @@
                             roomCode: data.roomCode,
                             username: val
                         };
-                        g_socketOrg[orgCode].emit(g_orgEvents.join_room, {obj});
+                        g_socketOrg[data.orgCode].emit(g_orgEvents.join_room, {obj});
                     });
                     $('#qr-alert .modal-body').html(result.msg);
                     $('#qr-alert').modal('show');
@@ -294,7 +294,7 @@
             g_curSocket = g_socketOrg[getNs];
         }
 
-        loadNewChatContent(oldRoom, getRoom);
+        loadNewChatContent(oldRoom);
 
         $('.chat-active').removeClass('chat-active');
         $(e).addClass('chat-active');
@@ -314,10 +314,11 @@
 
             //custom org event
             g_socketOrg[i].on(g_orgEvents.new_room, (obj) => {
+                console.log('new room');
+                console.log(obj);
                 if ( (g_user == obj.username) && 
                     ($('#r-'+obj.room.code).length == 0) ) {
                     displayNewRoom(obj.room);
-
                 }
             });
 
@@ -392,6 +393,7 @@
         temp += '<div class="chat-room-status">';
         temp += 'Online: <span class="chat-room-online">1</span>&nbsp;&nbsp;';
         temp += '<i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;';
+        temp += '<i class="fa fa-user-plus chat-room-add-member" title="add members"></i>&nbsp;&nbsp;';
         temp += '<span class="chat-room-unread badge"></span>';
         temp += '</div>';
         temp += '</div>';
@@ -405,6 +407,10 @@
         ]);
         var parseHtml = $.parseHTML($.trim(temp));
         $('.chat-room-list').append(parseHtml);
+
+        //save chat content of this room
+        g_chatContent[room.code] = '';
+        g_historyChatPage[room.code] = -1;
 
         //add event to this room DOM node
         $(parseHtml).on('click', function() {
@@ -421,10 +427,15 @@
             };
             getMemberList(data);
         });
+
+        $(parseHtml).find('.chat-room-add-member').on('click', function() {
+            $('#fm-add-member-room').val($(this).parent().parent().find('.chat-room-name').html());
+            $('#fm-add-member-room-code').val($(this).parents().filter('.chat-room').data('room'));
+            $('#fm-add-member-org-code').val($(this).parents().filter('.chat-room').data('org'));
+            $('#qr-modal-add-member').modal('show');
+        });
         //change seleted room to this room
         changeChatRoom(room.org, room.code, parseHtml);
-        //save chat content of this room
-        g_chatContent[room.code] = $(g_selectorList.chat_container_inner).html();
     }
 
 
@@ -607,7 +618,7 @@
         if (g_chatContent[g_curRoom] != null) {
             $(g_selectorList.chat_container_inner).html(g_chatContent[g_curRoom]);
         } else {
-            $(g_selectorList.chat_container_inner).html('')
+            $(g_selectorList.chat_container_inner).html('');
             loadHistoryChatContent();
         }
         $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
@@ -635,19 +646,21 @@
         .autocomplete({
             source: function(request, response) {
                 var data =[];
-                if ($(this).attr('id') == 'fm-add-member-users') {
+                if ($(this.bindings[0]).attr('id') == 'fm-add-member-users') {
                     data = {
                         term: extractLast(request.term),
-                        org: $('#fm-add-member-org').val(),
-                        room: $('#fm-add-member-room').val()
+                        org: $('#fm-add-member-org-code').val(),
+                        room: $('#fm-add-member-room-code').val()
                     };
                 } else {
                     data = {
                         term: extractLast(request.term),
-                        org: $('#fm-org').val(),
+                        org: $('#fm-room-org').val(),
                         room: ''
                     };
                 }
+                console.log($(this.bindings[0]).attr('id'));
+                console.log(data);
                 $.ajax({
                     url: 'main/aj/user-search',
                     data: data,

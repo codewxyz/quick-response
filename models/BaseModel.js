@@ -11,7 +11,6 @@ function BaseModel() {
     if (arguments[1] != undefined) {
         storeType = arguments[1];
     }
-    logger(table);
 
     connect();
 
@@ -30,6 +29,7 @@ function BaseModel() {
 
     this.custom = (command, id, args=null) => {
         var key = getKey(id);
+        logger(command, id, args);
         if (args == null) {
             return db[command+'Async'](key);
         } else {

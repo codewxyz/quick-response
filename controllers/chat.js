@@ -23,9 +23,6 @@ exports.show = (req, res) => {
         }
     })
     .then((rooms) => {
-        // if (rooms.length == 0) {
-        //     return res.render('chat_room.html', { user: user, rooms: chatRooms, chats: getLatestChat() });
-        // }
         for (var i in rooms) {
     		chatRooms.push(rooms[i]);
         }
@@ -131,19 +128,24 @@ exports.addRoomMembers = (req, res) => {
     }).filter((val) => {
         return (val != '') && (val != user.username);
     });
+    var room = {
+        code: formParam.roomCode,
+        org: formParam.orgCode
+    };
 
-    addUsersToRoom(formParam.roomCode, userList)
+    addUsersToRoom(room, userList)
     .then((result) => {
-        if (results.length > 0) {
+        if (result.length > 0) {
             return res.json({success: true, msg: 'Added members to room.', data: userList});
         } 
         return res.json({success: false, msg: 'No members added to room.'});
     })
     .catch((err) => {
+        logger(err);
         return res.json({success: false, msg: 'Error adding members to room.'});
     });
 
-}
+};
 /**
  * create room in an organization
  * @param  {Request} req [description]
@@ -295,8 +297,10 @@ exports.searchUser = (req, res) => {
         key: keyUserList,
         count: 10
     };
+    logger(req.query.room);
     models.lists.count(keyUserList, 'set')
     .then((total) => {
+        logger(total, searchOption);
         if (total > 0) {
             searchOption.count = total;
             return models.lists.search(searchOption);
@@ -366,12 +370,13 @@ function addUsersToRoom(room, userList) {
             if (result.length > 0) {    
                 //update list user in room        
                 models.lists.custom('sdiffstore', models.lists.getKeyRoomNUser(roomCode), 
-                    models.lists.getKey(models.lists.getKeyOrgUser(roomOrg)), 
-                    models.lists.getKey(models.lists.getKeyRoomUser(roomCode)))
+                    [models.lists.getKey(models.lists.getKeyOrgUser(roomOrg)), 
+                    models.lists.getKey(models.lists.getKeyRoomUser(roomCode))])
+                .then(logger)
                 .catch(logger);
 
-                logger('end adding users to room', 'successfully', result.length, commands.length);
-                mresolve(results);
+                logger('end adding users to room', 'successfully');
+                mresolve(result);
             } else {
                 logger('end adding users to room', 'These users has been added.');
                 mreject('These users has been added.');
