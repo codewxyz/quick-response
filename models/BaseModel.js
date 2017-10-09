@@ -11,6 +11,7 @@ function BaseModel() {
     if (arguments[1] != undefined) {
         storeType = arguments[1];
     }
+    logger(table);
 
     connect();
 
@@ -48,7 +49,6 @@ function BaseModel() {
         for (var i in commands) {
             commandList.push(prepareMulti(commands[i]));
         }
-        logger(commandList);
 
         return db.multi(commandList).execAsync();
     };

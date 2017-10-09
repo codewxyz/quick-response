@@ -13,13 +13,14 @@
 // 	last_login: '1504216',
 // };
 
-delete require.cache[require.resolve('./BaseModel.js')];
-var BaseModel = require('./BaseModel.js');
+delete require.cache[require.resolve(__dirname+'/BaseModel.js')];
+var BaseModel = require(__dirname+'/BaseModel.js');
 var util = require('util');
 var logger = global.qrLog;
 
 function UsersModel() {
     BaseModel.apply(this, ['users']);
+    this.test = () => {logger('aa test',BaseModel); return this.batch();}
     this.setPK('username');
     this.reserved = ['global', 'admin'];
 

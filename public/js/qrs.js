@@ -12,6 +12,7 @@
 
     var g_roomEvents = {
         message: 'chat message',
+        message_failed: 'chat message send failed',
         count_online: 'count user online',
         buzz: 'chat buzz'
     };
@@ -40,6 +41,7 @@
     var g_selectorList = {
         chat_container_inner: '.chatbody table tbody',
         chat_container: '.chatbody',
+        chat_container_overlay: '.chatbody-overlay',
         input_msg: '.input-chat-msg'
     };
 
@@ -48,10 +50,20 @@
     var g_curRoom = g_worldRoom;
     var g_curSocket = g_socket;
     var g_chatContent = {};
+    var g_historyChatPage = {};
 
     connectRooms();
 
     setSocketEvents();
+
+    //first auto scroll if chat section is long
+    $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+
+    $(g_selectorList.chat_container).on('scroll', function () {
+        if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] > -1) {
+            loadHistoryChatContent();
+        }
+    });
 
     //send message to server
     $('.btn-chat-submit').on('click', function() {
@@ -62,6 +74,101 @@
 
     $('#new-room-btn').on('click', function() {
         $('#qr-modal-room').modal('show');
+    });
+
+    $('.chat-room-add-member').on('click', function() {
+        $('#fm-add-member-room').val($(this).parents().filter('.chat-room-name').html());
+        $('#fm-add-member-room-code').val($(this).parents().filter('.chat-room').data('code'));
+        $('#fm-add-member-org-code').val($(this).parents().filter('.chat-room').data('org'));
+        $('#qr-modal-add-member').modal('show');
+    });
+
+    $('.nav-setting').on('click', function() {
+        console.log($('#user').data('user'));
+        $('#qr-modal-setting').modal('show');
+    });
+
+    $('.btn-fm-setting-submit').on('click', function() {
+        var data = {
+            username: $('#fm-setting-username').val(),
+            name: $('#fm-setting-name').val(),
+            avatar: $('#fm-setting-avatar').val(),
+            email: $('#fm-setting-email').val(),
+            password: $('#fm-setting-password').val(),
+            repassword: $('#fm-setting-repassword').val()
+        };
+        $.ajax({
+            url: 'main/aj/change-setting',
+            type: 'post',
+            data: data,
+            dataType: 'json',
+            complete: function(xhr, status) {
+                
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error updating data.');
+                    $('#qr-alert').modal('show');
+                }
+                $('#qr-modal-setting').modal('hide');
+            },
+            success: function(result, status, xhr) {
+                
+                if (result.success) {
+                    $('#do-logout').click();
+                } else {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                }
+            }
+        });
+
+    });
+
+    $('.btn-fm-add-member-submit').on('click', function() {
+        orgCode = $('#fm-add-member-org-code').val();
+        var data = {
+            roomCode: $('#fm-add-member-room-code').val(),
+            users: $('#fm-add-member-users').val(),
+        };
+        $.ajax({
+            url: 'main/aj/add-members',
+            type: 'post',
+            data: data,
+            dataType: 'json',
+            complete: function(xhr, status) {
+                
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error adding members.');
+                    $('#qr-alert').modal('show');
+                }
+                $('#qr-modal-add-member').modal('hide');
+                $('#qr-modal-add-member input').val('');
+            },
+            success: function(result, status, xhr) {
+                
+                if (result.success) {
+                    result.data.forEach((val) => {
+                        var obj = {
+                            roomCode: data.roomCode,
+                            username: val
+                        };
+                        g_socketOrg[orgCode].emit(g_orgEvents.join_room, {obj});
+                    });
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                } else {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                }
+            }
+        });
     });
 
     $('.btn-fm-room-submit').on('click', function() {
@@ -87,6 +194,7 @@
                     $('#qr-alert').modal('show');
                 }
                 $('#qr-modal-room').modal('hide');
+                $('#qr-modal-room input').val('');
             },
             success: function(result, status, xhr) {
                 
@@ -160,7 +268,8 @@
                         temp = formatTxt(temp, [
                             val.avatar,
                             val.username,
-                            val.status
+                            val.status == 'online' ? 
+                            '<span style="color:green;">online</span>' : '<span style="color:red;">offline</span>'
                         ]);
                         $('.qr-modal-room-list-member-table').append(temp);
 
@@ -185,7 +294,7 @@
             g_curSocket = g_socketOrg[getNs];
         }
 
-        loadNewChatContent(oldRoom);
+        loadNewChatContent(oldRoom, getRoom);
 
         $('.chat-active').removeClass('chat-active');
         $(e).addClass('chat-active');
@@ -197,7 +306,10 @@
         for (var i in g_socketOrg) {
             //room events
             g_socketOrg[i].on(g_roomEvents.message, function(msg) {
-                insertChat(msg, msg.roomCode);
+                insertChat(msg);
+            });
+            g_socketOrg[i].on(g_roomEvents.message_failed, function(msg) {
+                insertChatStatus(msg);
             });
 
             //custom org event
@@ -233,7 +345,10 @@
 
         //------for default socket-----------
         g_socket.on(g_roomEvents.message, function(msg) {
-            insertChat(msg, msg.roomCode);
+            insertChat(msg);
+        });
+        g_socket.on(g_roomEvents.message_failed, function(msg) {
+            insertChatStatus(msg);
         });
 
         g_socket.on(g_roomEvents.count_online, function(msg) {
@@ -337,9 +452,31 @@
     }
 
     //receive message and display/store to target room
-    function insertChat(obj, room) {
+    function insertChat(obj) {
+        roomCode = obj.roomCode;
+        var temp = getFormattedChat(obj);
+
+        //check to store or display this message                    
+        if (roomCode == g_curRoom) {
+            $(g_selectorList.chat_container_inner).append(temp);
+            //auto scroll to newest message on screen
+            $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+        } else {
+            if (g_chatContent[roomCode] != undefined) {
+                g_chatContent[roomCode] += temp;
+            } else {
+                g_chatContent[roomCode] = temp;
+            }
+
+            var unreadhHtml = $('#r-' + roomCode).find('.chat-room-unread').html();
+            $('#r-' + roomCode).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml) + 1);
+        }
+    }
+
+    function getFormattedChat(obj) {
+        roomCode = obj.roomCode;
         var selfClass = '';
-        if (g_user == obj.user) {
+        if (g_user == obj.username) {
             selfClass = ['my-avatar', 'my-msg'];
         }
         var str = "";
@@ -359,21 +496,32 @@
             obj.time,
             formatMsg(obj.msg)
         ]);
+        return temp;
+    }
+
+    /**
+     * insert status send from server to chat content section
+     * @param  {Object} obj [description]
+     * @return {void}     [description]
+     */
+    function insertChatStatus(obj) {
+        roomCode = obj.roomCode;
+        console.log(obj);
+        var str = "";
+        str += '<tr>';
+        str += '<td style="text-align: center;" colspan="2">';
+        str += '<span style="color:gray; font-size: 0.8em;">${txt0}</span>';
+        str += '</td>';
+        str += '</tr>';
+        var temp = formatTxt(str, [
+            obj.msg
+        ]);
 
         //check to store or display this message                    
-        if (room == g_curRoom) {
+        if (roomCode == g_curRoom) {
             $(g_selectorList.chat_container_inner).append(temp);
             //auto scroll to newest message on screen
             $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
-        } else {
-            if (g_chatContent[room] != undefined) {
-                g_chatContent[room] += temp;
-            } else {
-                g_chatContent[room] = temp;
-            }
-
-            var unreadhHtml = $('#r-' + room).find('.chat-room-unread').html();
-            $('#r-' + room).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml) + 1);
         }
     }
 
@@ -393,27 +541,76 @@
             if (getNs == 'W') {
                 getSk = g_socket;
                 getRoom = g_worldRoom;
+                g_chatContent[getRoom] = $(g_selectorList.chat_container_inner).html();
+                g_historyChatPage[getRoom] = 1;
+
             } else {
                 getSk = g_socketOrg[getNs];
+                g_chatContent[getRoom] = null;
+                g_historyChatPage[getRoom] = 0;
             }
-            g_chatContent[getRoom] = $(g_selectorList.chat_container_inner).html();
         }
     }
 
-    //get chat event code
-    // function createChatEvent(room, txtEvent) {
-    //     return (room == g_worldRoom) ? txtEvent : (room + '::' + txtEvent);
-    // }
+    function loadHistoryChatContent() {
+        console.log(g_curRoom);
+        $.ajax({
+            url: 'main/aj/chat-latest',
+            data: {
+                roomCode: g_curRoom,
+                page: g_historyChatPage[g_curRoom]
+            },
+            type: 'post',
+            beforeSend: function (xhr) {
+                // body...
+                $(g_selectorList.chat_container_overlay).css('display', 'block');
+                $(g_selectorList.chat_container_inner).css('display', 'none');
+            },
+            complete: function(xhr, status) {
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error getting data.');
+                    $('#qr-alert').modal('show');
+                }
+                setTimeout(()=>{                        
+                    $(g_selectorList.chat_container_overlay).css('display', 'none');
+                    $(g_selectorList.chat_container_inner).css('display', 'block');
+                }, 1000);
+            },
+            success: function(result, status, xhr) {
+                if (result.success) {
+                    var chatStr = '';
+                    if (result.data.length > 0) {
+                        result.data.forEach((val) => {
+                            chatStr += getFormattedChat(val);
+                        });
+                        $(g_selectorList.chat_container_inner).prepend(chatStr);
+                        g_historyChatPage[g_curRoom]++;
+                    } else {
+                        g_historyChatPage[g_curRoom] = -1;
+                    }
+                } else {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                }
+            }
+        });
+    }
 
     function loadNewChatContent(old) {
         //store current chat room content
         g_chatContent[old] = $(g_selectorList.chat_container_inner).html();
         //get selected chat room content if exist & display
-        if (g_chatContent[g_curRoom] != undefined) {
+        if (g_chatContent[g_curRoom] != null) {
             $(g_selectorList.chat_container_inner).html(g_chatContent[g_curRoom]);
         } else {
-            $(g_selectorList.chat_container_inner).html('');
+            $(g_selectorList.chat_container_inner).html('')
+            loadHistoryChatContent();
         }
+        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
     }
 
 
@@ -427,7 +624,7 @@
         return split(term).pop();
     }
 
-    $("#fm-room-users")
+    $("#fm-room-users, #fm-add-member-users")
         // don't navigate away from the field on tab when selecting an item
         .on("keydown", function(event) {
             if (event.keyCode === $.ui.keyCode.TAB &&
@@ -437,12 +634,23 @@
         })
         .autocomplete({
             source: function(request, response) {
+                var data =[];
+                if ($(this).attr('id') == 'fm-add-member-users') {
+                    data = {
+                        term: extractLast(request.term),
+                        org: $('#fm-add-member-org').val(),
+                        room: $('#fm-add-member-room').val()
+                    };
+                } else {
+                    data = {
+                        term: extractLast(request.term),
+                        org: $('#fm-org').val(),
+                        room: ''
+                    };
+                }
                 $.ajax({
                     url: 'main/aj/user-search',
-                    data: {
-                        term: extractLast(request.term),
-                        org: $('#fm-room-org').val()
-                    },
+                    data: data,
                     type: 'get',
                     complete: function(xhr, status) {
                         if (xhr.status == 403) {

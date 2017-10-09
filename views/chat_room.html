@@ -41,7 +41,7 @@
                         {% if (user.role == 'admin') %}
                         <li><a href="/admin">Management</a></li>
                         {% endif %}
-                        <li><a href="javascript:void(0)">Setting</a></li>
+                        <li><a href="javascript:void(0)" class="nav-setting">Setting</a></li>
                         <li><a href="javascript:void(0)" id="do-logout">Logout</a></li>
                     </ul>
                 </div>
@@ -66,6 +66,7 @@
             <div class="chat-room-status">
                 Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
                 <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
+                <i class="fa fa-user-plus chat-room-add-member" title="add members"></i>&nbsp;&nbsp;
                 <span class="chat-room-unread badge"></span>
             </div>
         </div>
@@ -81,6 +82,7 @@
                 <div class="chat-room-status">
                     Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
                     <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
+                    <i class="fa fa-user-plus chat-room-add-member" title="add members"></i>&nbsp;&nbsp;
                     <span class="chat-room-unread badge"></span>
                 </div>
             </div>
@@ -89,18 +91,23 @@
     </div>
     <div class="col-sm-8">
         <div class="chatbody">
+            <div class="chatbody-overlay">
+                <i class="fa fa-spinner fa-spin fa-2x fa-pulse"></i>
+            </div>
             <table class="table">
                 <tbody>
-                <!-- <tr>
-                    <td class="avatar avatar-me"><img src="http://via.placeholder.com/50x50?text=A" /></td>
-                    <td class="display-msg my-msg">
-                    <p><span class="display-msg-username">giangtp</span> 15:20</p>
-                    <p>Hi</p>
+                {% for chat in chats %}
+                <tr>
+                    <td class="avatar {{ "my-avatar" if (chat.username == user.username) }}">
+                        <img src="{{ chat.avatar }}" alt="avatar" />
                     </td>
-                    <td class="msg-info">
-                        Opts
+                    <td class="display-msg {{ "my-msg" if (chat.username == user.username) }}">
+                    <p class="display-msg-header"><span class="display-msg-header-username">{{ chat.name }}</span>&nbsp;&nbsp;
+                    <span class="display-msg-header-time">{{ chat.time }}</span></p>
+                    <p class="display-msg-content">{{ chat.msg }}</p>
                     </td>
-                </tr> -->
+                </tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -118,7 +125,7 @@
 <form id="fm-logout" action="/logout" method="post" class="invisible">
 </form>
 
-<input type="hidden" id="user" value="{{ user.username }}">
+<input type="hidden" id="user" value="{{ user.username }}" data-user="{{ user }}">
 
 <!-- Modal -->
 <div class="modal fade" id="qr-modal-room" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -154,6 +161,36 @@
 </div>
 
 <!-- Modal -->
+<div class="modal fade" id="qr-modal-add-member" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Add Room</h4>
+      </div>
+      <div class="modal-body">
+        <form id="fm-add-member">
+            <div class="form-group">
+                <label for="fm-add-member-room">Room</label>
+                <input type="text" class="form-control" id="fm-add-member-room" placeholder="room name" disabled />
+                <input type="hidden" id="fm-add-member-room-code" disabled />
+                <input type="hidden" id="fm-add-member-org-code" disabled />
+            </div>
+            <div class="form-group ui-widget">
+                <label for="fm-add-member-users">Users</label>
+                <input type="text" class="form-control" id="fm-add-member-users" placeholder="add users to this room">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary btn-fm-add-member-submit">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
 <div class="modal fade" id="qr-modal-room-list-member" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -172,6 +209,51 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="qr-modal-setting" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Setting</h4>
+      </div>
+      <div class="modal-body">
+        <p>Note: To update the changes, you will be force to re-login.</p>
+        <form id="fm-setting">
+            <div class="form-group">
+                <label for="fm-setting-username">Username</label>
+                <input type="text" class="form-control" id="fm-setting-username" value="{{ user.username }}" disabled />
+            </div>
+            <div class="form-group">
+                <label for="fm-setting-name">Name</label>
+                <input type="text" class="form-control" id="fm-setting-name" value="{{ user.name }}">
+            </div>
+            <div class="form-group">
+                <label for="fm-setting-email">Email</label>
+                <input type="text" class="form-control" id="fm-setting-email" value="{{ user.email }}">
+            </div>
+            <div class="form-group">
+                <label for="fm-setting-avatar">Avatar (external url)</label>
+                <input type="text" class="form-control" id="fm-setting-avatar" value="{{ user.avatar }}">
+            </div>
+            <div class="form-group">
+                <label for="fm-setting-password">Password</label>
+                <input type="password" class="form-control" id="fm-setting-password" placeholder="password">
+            </div>
+            <div class="form-group">
+                <label for="fm-setting-repassword">Re-Password</label>
+                <input type="password" class="form-control" id="fm-setting-repassword" placeholder="re-type password">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary btn-fm-setting-submit">Update</button>
       </div>
     </div>
   </div>

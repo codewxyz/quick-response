@@ -98,7 +98,10 @@ app.post('/logout', loginController.doLogout);
 app.get('/main', chatController.show);
 app.get('/main/aj/user-search', chatController.searchUser);
 app.post('/main/aj/add-room', chatController.addRoom);
+app.post('/main/aj/add-members', chatController.addRoomMembers);
 app.post('/main/aj/room-members', chatController.getRoomMembers);
+app.post('/main/aj/chat-latest', chatController.getChatLatest);
+app.post('/main/aj/change-setting', chatController.changeSetting);
 
 app.get('/admin', adminController.show);
 app.get('/admin/search/user', adminController.searchUser);
