@@ -50,6 +50,7 @@ global.myserver = {
 };
 global.system = {
 	app_name: 'Quick Reponse',
+    app_port: process.env.PORT != undefined ? process.env.PORT : 3000,
     redis_url: (process.env.REDIS_URL != undefined) ? process.env.REDIS_URL : '',
     shortid: require('shortid')
 };
@@ -129,7 +130,7 @@ function checkDBConnection() {
     logger('checking Redis connection...');
     if (models.lists.redis().connected) {
         //server listen
-        http.listen(3000, function() {
+        http.listen(system.app_port, function() {
             console.log('server listening on *:3000');
         }); 
 
