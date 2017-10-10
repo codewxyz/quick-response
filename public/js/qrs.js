@@ -65,13 +65,13 @@
     $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
 
     $(g_selectorList.chat_container).on('scroll', function () {
-        if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] > -1) {
+        if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] > 0) {
             loadHistoryChatContent();
         }
     });
 
     //send message to server
-    $(g_selectorList.input_msg).keypress(function(event) {
+    $(g_selectorList.input_msg).on('change', function(event) {
         console.log(event.which);
         var keyCode = event.which;
         if (keyCode == 13) {
@@ -626,6 +626,7 @@
                             chatStr += getFormattedChat(val);
                         });
                         $(g_selectorList.chat_container_inner).prepend(chatStr);
+                        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
                         g_historyChatPage[g_curRoom]++;
                     } else {
                         g_historyChatPage[g_curRoom] = -1;
@@ -644,11 +645,11 @@
         //get selected chat room content if exist & display
         if (g_chatContent[g_curRoom] != null) {
             $(g_selectorList.chat_container_inner).html(g_chatContent[g_curRoom]);
+            $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
         } else {
             $(g_selectorList.chat_container_inner).html('');
             loadHistoryChatContent();
         }
-        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
     }
 
 
