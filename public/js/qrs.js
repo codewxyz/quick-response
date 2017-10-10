@@ -58,7 +58,7 @@
 
     //reload first messages
     $('.display-msg-content').each(function() {
-        $(this).html(forge.util.decode64(formatMsg($(this).data('remsg'))));
+        $(this).html(formatMsg($(this).data('remsg')));
     });
 
     //first auto scroll if chat section is long
@@ -468,8 +468,8 @@
             alert(g_alertMsg.validate_err_01);
             return;
         }
-        var getMsg = forge.util.encode64($($(g_selectorList.input_msg)[1]).html());
-        // var getMsg = $($(g_selectorList.input_msg)[1]).html();
+        // var getMsg = forge.util.encodeUtf8($($(g_selectorList.input_msg)[1]).html());
+        var getMsg = $($(g_selectorList.input_msg)[1]).html();
         var msgObj = {
             content: getMsg,
             roomCode: room,
@@ -483,7 +483,7 @@
     //receive message and display/store to target room
     function insertChat(obj) {
         roomCode = obj.roomCode;
-        obj.msg = forge.util.decode64(obj.msg);
+        // obj.msg = forge.util.decodeUtf8(obj.msg);
         var temp = getFormattedChat(obj);
 
         //check to store or display this message                    
