@@ -71,6 +71,13 @@
     });
 
     //send message to server
+    $(g_selectorList.input_msg).keypress(function(event) {
+        console.log(event.which);
+        var keyCode = event.which;
+        if (keyCode == 13) {
+            $('.btn-chat-submit').click();
+        }
+    });
     $('.btn-chat-submit').on('click', function() {
         sendMsg(g_curSocket, g_curRoom);
         $(g_selectorList.input_msg).val('');
@@ -488,9 +495,12 @@
 
         //check to store or display this message                    
         if (roomCode == g_curRoom) {
+            var oldHeight = $(g_selectorList.chat_container_inner).height();
             $(g_selectorList.chat_container_inner).append(temp);
             //auto scroll to newest message on screen
-            $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+            if ($(g_selectorList.chat_container).scrollTop >= oldHeight) {
+                $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+            }
         } else {
             if (g_chatContent[roomCode] != undefined) {
                 g_chatContent[roomCode] += temp;
