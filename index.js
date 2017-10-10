@@ -10,18 +10,23 @@ var promise = require("bluebird");
 //--------------------SESSION FOR APP---------------
 var session = require('express-session');
 var redisStore = require('connect-redis')(session);
+var redisOpts = {
+    prefix: 'qr-session:'
+};
+if (process.env.REDIS_URL != undefined && process.env.REDIS_URL != '') {
+    redisOpts.url = process.env.REDIS_URL;
+} else {  
+    redisOpts.host = '127.0.0.1';
+    redisOpts.port = '6379';
+}
+  
 session = session({ 
     secret: 'mT7vzH7des',  
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 360000 },
-    store: new redisStore({
-        host: '127.0.0.1',
-        port: '6379',
-        prefix: 'qr-session:'
-    })
+    store: new redisStore(redisOpts)
 });
-
 //session for use in socket.io
 var sharedsession = require("express-socket.io-session")(
     session, {
@@ -44,7 +49,8 @@ global.myserver = {
 	express: app
 };
 global.system = {
-	setting: 'test',
+	app_name: 'Quick Reponse',
+    redis_url: (process.env.REDIS_URL != undefined) ? process.env.REDIS_URL : '',
     shortid: require('shortid')
 };
 

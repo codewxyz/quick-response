@@ -30,6 +30,7 @@ body {
   padding: 4px;
   background-color: whitesmoke;
   color: black;
+  cursor: default;
 }
 .chat-room:hover, .chat-room:focus{
   text-decoration: none;
@@ -65,6 +66,13 @@ body {
   padding-left: 5px;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+.chat-room-change-room {
+	position: absolute;
+	right: 0;
+	width: 20%;
+	height: 50px;
+	cursor: pointer;
 }
 
 .chat-room-online {

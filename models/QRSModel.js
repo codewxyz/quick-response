@@ -19,12 +19,18 @@ function QRSModel() {
 
     this.redis = () => db;
 
-    this.custom = (command, key, args = null) => {
-        if (args == null) {
-            return db[command + 'Async'](key);
-        } else {
-            return db[command + 'Async'](key, args);
-        }
+    /**
+     * run a redis command
+     * arguments can be flexible
+     * @return {Promise} [description]
+     */
+    this.custom = function() {
+        var args = Array.from(arguments);
+        var command = arguments[0];
+        var key = getKey(arguments[1]);
+        var passArgs = [key].concat(args.slice(2));
+
+        return db[command+'Async'](...passArgs);
     };
 
     this.cleanRedis = () => {
@@ -181,9 +187,16 @@ function connect() {
     promise.promisifyAll(redis.RedisClient.prototype);
     promise.promisifyAll(redis.Multi.prototype);
 
-    db = redis.createClient({
-        prefix: redisPrefix
-    });
+    var redisUrl = global.system.redis_url;
+    if (redisUrl != '') {
+        db = redis.createClient(redisUrl, {
+            prefix: redisPrefix
+        });
+    } else {
+        db = redis.createClient({
+            prefix: redisPrefix
+        });
+    }
 
     db.on('connect', (err) => {
         logger('Redis connected with ' + redisPrefix);

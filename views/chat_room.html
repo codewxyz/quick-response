@@ -69,6 +69,7 @@
                 <span class="chat-room-unread badge"></span>
             </div>
         </div>
+        <div class="chat-room-change-room"></div>
     </a>
     {% for room in rooms %}
         <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
@@ -85,6 +86,7 @@
                     <span class="chat-room-unread badge"></span>
                 </div>
             </div>
+            <div class="chat-room-change-room"></div>
         </a>
     {% endfor %}
     </div>
@@ -103,7 +105,7 @@
                     <td class="display-msg {{ "my-msg" if (chat.username == user.username) }}">
                     <p class="display-msg-header"><span class="display-msg-header-username">{{ chat.name }}</span>&nbsp;&nbsp;
                     <span class="display-msg-header-time">{{ chat.time }}</span></p>
-                    <p class="display-msg-content">{{ chat.msg }}</p>
+                    <p class="display-msg-content" data-remsg="{{ chat.msg }}">{{ chat.msg }}</p>
                     </td>
                 </tr>
                 {% endfor %}
@@ -112,7 +114,8 @@
         </div>
         <div class="row">
             <div class="col-sm-10 col-xs-9">
-                <textarea class="form-control input-chat-msg" placeholder="Input message here..." autofocus="true" required="true"></textarea>
+                <textarea class="form-control input-chat-msg" placeholder="Input message here..." 
+                data-emojiable="true" autofocus="true" required="true"></textarea>
             </div>
             <div class="col-sm-2 col-xs-3" style="padding-left: 0;">
                 <button class="btn btn-info btn-block btn-chat-submit">Send</button>
@@ -124,7 +127,8 @@
 <form id="fm-logout" action="/logout" method="post" class="invisible">
 </form>
 
-<input type="hidden" id="user" value="{{ user.username }}" data-user="{{ user }}">
+<input type="hidden" id="user" value="{{ user.username }}" data-username="{{ user.username }}" 
+    data-name="{{ user.name }}" data-email="{{ user.email }}" data-avatar="{{ user.avatar }}" disabled />
 
 <!-- Modal -->
 <div class="modal fade" id="qr-modal-room" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -262,6 +266,11 @@
 {% block script %}
 <!-- socket.io for client side -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+<script src="/js/forge.all.min.js"></script>
+<script src="/js/emoji/config.js"></script>
+<script src="/js/emoji/util.js"></script>
+<script src="/js/emoji/jquery.emojiarea.js"></script>
+<script src="/js/emoji/emoji-picker.js"></script>
 <script src="/js/qrservice.js"></script>
 <script src="/js/qrs.js"></script>
 <script src="/js/main.js"></script>

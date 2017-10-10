@@ -48,6 +48,7 @@ exports.getChatLatest = (req, res) => {
 
     getLatestChat(roomCode, page)
     .then((results) => {
+        logger('get chat', roomCode, results.length);
         var chats = results;
         return res.json({success: true, msg: '', data: chats});
     })

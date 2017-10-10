@@ -46,7 +46,7 @@
     };
 
     var g_worldRoom = 'room';
-    var g_user = $('#user').val();
+    var g_user = $('#user').data();
     var g_curRoom = g_worldRoom;
     var g_curSocket = g_socket;
     var g_chatContent = {};
@@ -55,6 +55,11 @@
     connectRooms();
 
     setSocketEvents();
+
+    //reload first messages
+    $('.display-msg-content').each(function() {
+        $(this).html(forge.util.decode64(formatMsg($(this).data('remsg'))));
+    });
 
     //first auto scroll if chat section is long
     $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
@@ -84,7 +89,6 @@
     });
 
     $('.nav-setting').on('click', function() {
-        console.log($('#user').data('user'));
         $('#qr-modal-setting').modal('show');
     });
 
@@ -149,7 +153,6 @@
                     $('#qr-alert').modal('show');
                 }
                 $('#qr-modal-add-member').modal('hide');
-                $('#qr-modal-add-member input').val('');
             },
             success: function(result, status, xhr) {
                 
@@ -194,7 +197,6 @@
                     $('#qr-alert').modal('show');
                 }
                 $('#qr-modal-room').modal('hide');
-                $('#qr-modal-room input').val('');
             },
             success: function(result, status, xhr) {
                 
@@ -211,10 +213,24 @@
         });
     });
 
-    $('.chat-room').on('click', function() {
-        var getNs = $(this).data('org');
-        var getRoom = $(this).data('room');
-        changeChatRoom(getNs, getRoom, this);
+    $('#qr-modal-room, #qr-modal-add-member').on('hidden.bs.modal', function() {
+        $(this).find('input').val('');
+    });
+
+    $('#qr-modal-setting').on('hidden.bs.modal', function() {
+        $('#fm-setting-username').val(g_user.username);
+        $('#fm-setting-name').val(g_user.name);
+        $('#fm-setting-email').val(g_user.email);
+        $('#fm-setting-avatar').val(g_user.avatar);
+        $('#fm-setting-password').val('');
+        $('#fm-setting-repassword').val('');
+    });
+
+    $('.chat-room-change-room').on('click', function() {
+        var parent = $(this).parent();
+        var getNs = $(parent).data('org');
+        var getRoom = $(parent).data('room');
+        changeChatRoom(getNs, getRoom, parent);
     });
 
     $('.chat-room-list-member').on('click', function() {
@@ -293,7 +309,8 @@
             g_curRoom = getRoom;
             g_curSocket = g_socketOrg[getNs];
         }
-
+        console.log('old room '+oldRoom);
+        console.log('new room '+g_curRoom);
         loadNewChatContent(oldRoom);
 
         $('.chat-active').removeClass('chat-active');
@@ -314,9 +331,7 @@
 
             //custom org event
             g_socketOrg[i].on(g_orgEvents.new_room, (obj) => {
-                console.log('new room');
-                console.log(obj);
-                if ( (g_user == obj.username) && 
+                if ( (g_user.username == obj.username) && 
                     ($('#r-'+obj.room.code).length == 0) ) {
                     displayNewRoom(obj.room);
                 }
@@ -325,7 +340,6 @@
             //default org events
             g_socketOrg[i].on(g_socketClientEvents.connect, () => {
                 console.log('socket connected');
-                console.log(g_socketOrg[i].json.id);
             });
 
             g_socketOrg[i].on(g_socketClientEvents.connect_timeout, () => {
@@ -370,7 +384,6 @@
         });
         g_socket.on(g_socketClientEvents.connect, () => {
             console.log('socket connected');
-            console.log(g_socket.json.id);
         });
     }
 
@@ -397,6 +410,7 @@
         temp += '<span class="chat-room-unread badge"></span>';
         temp += '</div>';
         temp += '</div>';
+        temp += '<div class="chat-room-change-room"></div>';
         temp += '</a>';
         temp = formatTxt(temp, [
             room.code,
@@ -413,10 +427,11 @@
         g_historyChatPage[room.code] = -1;
 
         //add event to this room DOM node
-        $(parseHtml).on('click', function() {
-            var getNs = $(this).data('org');
-            var getRoom = $(this).data('room');
-            changeChatRoom(getNs, getRoom, this);
+        $(parseHtml).find('.chat-room-change-room').on('click', function() {
+            var parent = $(this).parent();
+            var getNs = $(parent).data('org');
+            var getRoom = $(parent).data('room');
+            changeChatRoom(getNs, getRoom, parent);
         });
 
         $(parseHtml).find('.chat-room-list-member').on('click', function() {
@@ -453,18 +468,22 @@
             alert(g_alertMsg.validate_err_01);
             return;
         }
+        var getMsg = forge.util.encode64($($(g_selectorList.input_msg)[1]).html());
+        // var getMsg = $($(g_selectorList.input_msg)[1]).html();
         var msgObj = {
-            content: $(g_selectorList.input_msg).val(),
+            content: getMsg,
             roomCode: room,
             orgCode: g_curSocket.nsp
         };
         sk.emit(g_roomEvents.message, msgObj);
+        $($(g_selectorList.input_msg)[1]).html('');
         $(g_selectorList.input_msg).focus();
     }
 
     //receive message and display/store to target room
     function insertChat(obj) {
         roomCode = obj.roomCode;
+        obj.msg = forge.util.decode64(obj.msg);
         var temp = getFormattedChat(obj);
 
         //check to store or display this message                    
@@ -487,7 +506,7 @@
     function getFormattedChat(obj) {
         roomCode = obj.roomCode;
         var selfClass = '';
-        if (g_user == obj.username) {
+        if (g_user.username == obj.username) {
             selfClass = ['my-avatar', 'my-msg'];
         }
         var str = "";
@@ -517,7 +536,6 @@
      */
     function insertChatStatus(obj) {
         roomCode = obj.roomCode;
-        console.log(obj);
         var str = "";
         str += '<tr>';
         str += '<td style="text-align: center;" colspan="2">';
@@ -564,7 +582,6 @@
     }
 
     function loadHistoryChatContent() {
-        console.log(g_curRoom);
         $.ajax({
             url: 'main/aj/chat-latest',
             data: {
@@ -659,8 +676,6 @@
                         room: ''
                     };
                 }
-                console.log($(this.bindings[0]).attr('id'));
-                console.log(data);
                 $.ajax({
                     url: 'main/aj/user-search',
                     data: data,

@@ -27,14 +27,18 @@ function BaseModel() {
 
     this.redis = () => db;
 
-    this.custom = (command, id, args=null) => {
-        var key = getKey(id);
-        logger(command, id, args);
-        if (args == null) {
-            return db[command+'Async'](key);
-        } else {
-            return db[command+'Async'](key, args);
-        }
+    /**
+     * run a redis command
+     * arguments can be flexible
+     * @return {Promise} [description]
+     */
+    this.custom = function() {
+        var args = Array.from(arguments);
+        var command = arguments[0];
+        var key = getKey(arguments[1]);
+        var passArgs = [key].concat(args.slice(2));
+
+        return db[command+'Async'](...passArgs);
     };
 
     /**
@@ -85,9 +89,6 @@ function BaseModel() {
                 case 'set':
                     resolve(dset('sadd', vals[primaryKey], vals.data));
                     break;
-                case 'set_diff':
-                    resolve(dset('sdiffstore', vals[primaryKey], vals.data));
-                    break;
                 default:
                     reject('no store type set in table '+table);
                     break;
@@ -106,10 +107,6 @@ function BaseModel() {
 
     this.get = (val) => {
         return hgetall(val);
-    };
-
-    this.getList = (val) => {
-
     };
 
     this.all = () => {
@@ -132,11 +129,19 @@ module.exports = BaseModel;
 //---------------------------------------------------------------------
 function connect() {
     var redis = require('redis');
+
     promise.promisifyAll(redis.RedisClient.prototype);
     promise.promisifyAll(redis.Multi.prototype);
-    db = redis.createClient({
-        prefix: redisPrefix
-    });
+    var redisUrl = global.system.redis_url;
+    if (redisUrl != '') {
+        db = redis.createClient(redisUrl, {
+            prefix: redisPrefix
+        });
+    } else {
+        db = redis.createClient({
+            prefix: redisPrefix
+        });
+    }
 
     db.on('connect', (err) => {
         logger('Redis connected with ' + redisPrefix + ' on ' + table);
