@@ -53,21 +53,26 @@
     var g_historyChatPage = {};
     var g_msgKeyHelper = 0;
     var g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+    var g_shouldNotify = 0;
+    var g_isTabActive = 1;
 
     connectRooms();
 
     setSocketEvents();
 
+    isBrowserTabActive();
+    checkNotify();
     // Initializes and creates emoji set from sprite sheet
     window.emojiPicker = new EmojiPicker({
-      emojiable_selector: '[data-emojiable=true]',
-      assetsPath: '../images/emoji/',
-      popupButtonClasses: 'fa fa-smile-o'
+        emojiable_selector: '[data-emojiable=true]',
+        assetsPath: '../images/emoji/',
+        popupButtonClasses: 'fa fa-smile-o'
     });
     // Finds all elements with `emojiable_selector` and converts them to rich emoji input fields
     // You may want to delay this step if you have dynamically created input fields that appear later in the loading process
     // It can be called as many times as necessary; previously converted input fields will not be converted again
     window.emojiPicker.discover();
+    $(g_selectorList.input_msg).focus();
 
     //reload first messages
     $('.display-msg-content').each(function() {
@@ -81,28 +86,28 @@
     }, 20);
 
 
-    $(g_selectorList.chat_container).on('scroll', function () {
+    $(g_selectorList.chat_container).on('scroll', function() {
         if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] > 0) {
             loadHistoryChatContent();
         }
     });
-
     //send message to server
-    $(g_selectorList.input_msg).on('keypress, keydown', function(event) {
+    $($(g_selectorList.input_msg)[1]).on('keydown', function(event) {
         var keyCode = event.which;
-        if (keyCode == 16) {
+        if (keyCode == 17) {
             g_msgKeyHelper = keyCode;
-        }
-        if (keyCode == 13 && g_msgKeyHelper != 16) {
+        } else if (keyCode == 13 && g_msgKeyHelper != 17) {
             $('.btn-chat-submit').click();
-        } else if (keyCode == 13 && g_msgKeyHelper == 16) {
+        } else {
             g_msgKeyHelper = 0;
         }
+        return;
     });
     $('.btn-chat-submit').on('click', function() {
         sendMsg(g_curSocket, g_curRoom);
-        $(g_selectorList.input_msg).val('');
-        return false;
+        $(g_selectorList.input_msg).focus();
+        $($(g_selectorList.input_msg)[1]).html('');
+        return;
     });
 
     $('#new-room-btn').on('click', function() {
@@ -135,7 +140,7 @@
             data: data,
             dataType: 'json',
             complete: function(xhr, status) {
-                
+
                 if (xhr.status == 403) {
                     location.href = '/';
                     return;
@@ -147,7 +152,7 @@
                 $('#qr-modal-setting').modal('hide');
             },
             success: function(result, status, xhr) {
-                
+
                 if (result.success) {
                     $('#do-logout').click();
                 } else {
@@ -171,7 +176,7 @@
             data: data,
             dataType: 'json',
             complete: function(xhr, status) {
-                
+
                 if (xhr.status == 403) {
                     location.href = '/';
                     return;
@@ -183,14 +188,14 @@
                 $('#qr-modal-add-member').modal('hide');
             },
             success: function(result, status, xhr) {
-                
+
                 if (result.success) {
                     result.data.forEach((val) => {
                         var obj = {
                             roomCode: data.roomCode,
                             username: val
                         };
-                        g_socketOrg[data.orgCode].emit(g_orgEvents.join_room, {obj});
+                        g_socketOrg[data.orgCode].emit(g_orgEvents.join_room, { obj });
                     });
                     $('#qr-alert .modal-body').html(result.msg);
                     $('#qr-alert').modal('show');
@@ -215,7 +220,7 @@
             data: data,
             dataType: 'json',
             complete: function(xhr, status) {
-                
+
                 if (xhr.status == 403) {
                     location.href = '/';
                     return;
@@ -227,7 +232,7 @@
                 $('#qr-modal-room').modal('hide');
             },
             success: function(result, status, xhr) {
-                
+
                 if (result.success) {
                     $('#qr-alert .modal-body').html(result.msg);
                     displayNewRoom(result.data);
@@ -269,6 +274,75 @@
         };
         getMemberList(data);
     });
+
+    function checkNotify() {
+        // Let's check if the browser supports notifications
+        if (!("Notification" in window)) {
+            console.log("This browser does not support system notifications");
+        }
+        // Let's check whether notification permissions have already been granted
+        else if (Notification.permission === "granted") {
+            // If it's okay let's create a notification
+            // var g_notify = new Notification("Hi there!");
+            console.log("Notify granted.");
+            return true;
+        }
+        // Otherwise, we need to ask the user for permission
+        else if (Notification.permission !== 'denied') {
+            Notification.requestPermission(function(permission) {
+                // If the user accepts, let's create a notification
+                if (permission === "granted") {
+                    // var notification = new Notification("Hi there!");
+                    console.log("Notify granted.");
+                    return true;
+                }
+            });
+        }
+        return false;
+    }
+
+    function createNotify(msg, icon='') {
+        // body...
+      var options = {
+          body: msg,
+          icon: icon == '' ? '/images/metro_mail.png' : icon,
+      };
+
+      var n = new Notification('Notification',options);
+      setTimeout(n.close.bind(n), 3000); 
+    }
+    function isBrowserTabActive() {
+        // body...
+        var hidden, visibilityChange;
+        if (typeof document.hidden !== "undefined") {
+            hidden = "hidden";
+            visibilityChange = "visibilitychange";
+        } else if (typeof document.mozHidden !== "undefined") {
+            hidden = "mozHidden";
+            visibilityChange = "mozvisibilitychange";
+        } else if (typeof document.msHidden !== "undefined") {
+            hidden = "msHidden";
+            visibilityChange = "msvisibilitychange";
+        } else if (typeof document.webkitHidden !== "undefined") {
+            hidden = "webkitHidden";
+            visibilityChange = "webkitvisibilitychange";
+        }
+        if (typeof document.addEventListener === "undefined" || typeof document[hidden] === "undefined") {
+          console.log("This requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API.");
+        } else {
+          // Handle page visibility change   
+          document.addEventListener(visibilityChange, function () {
+              if(document[hidden]) {
+                g_isTabActive = 0;
+                g_shouldNotify = 1;
+              } else {
+                g_isTabActive = 1;
+                g_shouldNotify = 0;
+              }
+          }, false);
+
+        }
+    }
 
     function getMemberList(data) {
         $.ajax({
@@ -312,7 +386,7 @@
                         temp = formatTxt(temp, [
                             val.avatar,
                             val.username,
-                            val.status == 'online' ? 
+                            val.status == 'online' ?
                             '<span style="color:green;">online</span>' : '<span style="color:red;">offline</span>'
                         ]);
                         $('.qr-modal-room-list-member-table').append(temp);
@@ -337,8 +411,8 @@
             g_curRoom = getRoom;
             g_curSocket = g_socketOrg[getNs];
         }
-        console.log('old room '+oldRoom);
-        console.log('new room '+g_curRoom);
+        console.log('old room ' + oldRoom);
+        console.log('new room ' + g_curRoom);
         loadNewChatContent(oldRoom);
 
         $('.chat-active').removeClass('chat-active');
@@ -351,6 +425,11 @@
         for (var i in g_socketOrg) {
             //room events
             g_socketOrg[i].on(g_roomEvents.message, function(msg) {
+                if (g_isTabActive == 0 && 
+                    g_shouldNotify == 1 && msg.username != g_user.username) {
+                    createNotify('Spam mail arrived!');
+                    g_shouldNotify = 0;
+                }
                 insertChat(msg);
             });
             g_socketOrg[i].on(g_roomEvents.message_failed, function(msg) {
@@ -359,8 +438,8 @@
 
             //custom org event
             g_socketOrg[i].on(g_orgEvents.new_room, (obj) => {
-                if ( (g_user.username == obj.username) && 
-                    ($('#r-'+obj.room.code).length == 0) ) {
+                if ((g_user.username == obj.username) &&
+                    ($('#r-' + obj.room.code).length == 0)) {
                     displayNewRoom(obj.room);
                 }
             });
@@ -388,6 +467,11 @@
 
         //------for default socket-----------
         g_socket.on(g_roomEvents.message, function(msg) {
+            if (g_isTabActive == 0 && 
+                g_shouldNotify == 1 && msg.username != g_user.username) {
+                createNotify('Spam mail arrived!');
+                g_shouldNotify = 0;
+            }
             insertChat(msg);
         });
         g_socket.on(g_roomEvents.message_failed, function(msg) {
@@ -491,21 +575,21 @@
 
     //validate input and send to server
     function sendMsg(sk, room) {
-        var content = $($(g_selectorList.input_msg)[1]).html();
+        var content = $($(g_selectorList.input_msg)[1]).html().trim();
+        content = content.replace('<div><br></div>', '');
         if (content == '') {
             alert(g_alertMsg.validate_err_01);
             return;
         }
+        console.log(content);
         // var getMsg = forge.util.encodeUtf8($($(g_selectorList.input_msg)[1]).html());
-        var getMsg = $($(g_selectorList.input_msg)[1]).html();
+        var getMsg = content;
         var msgObj = {
             content: getMsg,
             roomCode: room,
             orgCode: g_curSocket.nsp
         };
         sk.emit(g_roomEvents.message, msgObj);
-        $($(g_selectorList.input_msg)[1]).html('');
-        $(g_selectorList.input_msg).focus();
     }
 
     //receive message and display/store to target room
@@ -518,7 +602,7 @@
         if (roomCode == g_curRoom) {
             $(g_selectorList.chat_container_inner).append(temp);
             //auto scroll to newest message on screen
-            if ((obj.username == g_user.username) || 
+            if ((obj.username == g_user.username) ||
                 ($(g_selectorList.chat_container).scrollTop() >= g_scrollChatHelper)) {
                 $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
                 setTimeout(() => {
@@ -626,7 +710,7 @@
                 page: g_historyChatPage[g_curRoom]
             },
             type: 'post',
-            beforeSend: function (xhr) {
+            beforeSend: function(xhr) {
                 // body...
                 $(g_selectorList.chat_container_overlay).css('display', 'block');
                 $(g_selectorList.chat_container_inner).css('display', 'none');
@@ -640,10 +724,10 @@
                     $('#qr-alert .modal-body').html('Error getting data.');
                     $('#qr-alert').modal('show');
                 }
-                setTimeout(()=>{                        
+                setTimeout(() => {
                     $(g_selectorList.chat_container_overlay).css('display', 'none');
                     $(g_selectorList.chat_container_inner).css('display', 'block');
-                    if ((g_historyChatPage[g_curRoom]-1 ) ==0) {
+                    if ((g_historyChatPage[g_curRoom] - 1) == 0) {
                         $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
                         setTimeout(() => {
                             g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
@@ -710,7 +794,7 @@
         })
         .autocomplete({
             source: function(request, response) {
-                var data =[];
+                var data = [];
                 if ($(this.bindings[0]).attr('id') == 'fm-add-member-users') {
                     data = {
                         term: extractLast(request.term),
