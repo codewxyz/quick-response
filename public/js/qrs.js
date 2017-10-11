@@ -309,7 +309,7 @@
       };
 
       var n = new Notification('Notification',options);
-      setTimeout(n.close.bind(n), 3000); 
+      setTimeout(n.close.bind(n), 10000); 
     }
     function isBrowserTabActive() {
         // body...
