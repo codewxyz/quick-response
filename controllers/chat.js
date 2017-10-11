@@ -2,7 +2,6 @@ var auth = global.auth;
 var models = global.models;
 var logger = global.qrLog;
 var qrsModel = new (require('../models/QRSModel.js'))();
-var moment = require('moment');
 
 exports.show = (req, res) => {
     var user = auth.getUser(req);
@@ -84,6 +83,7 @@ exports.changeSetting = (req, res) => {
         ['hset', formParam.username, 'name', formParam.name],
         ['hset', formParam.username, 'avatar', formParam.avatar],
         ['hset', formParam.username, 'email', formParam.email],
+        ['hset', formParam.username, 'updated_at', Date.now()]
     ];
 
     if (formParam.password != '') {

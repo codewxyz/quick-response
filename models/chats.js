@@ -8,7 +8,6 @@ var BaseModel = require('./BaseModel.js');
 var userModel = null;
 var util = require('util');
 var logger = global.qrLog;
-var moment = require('moment');
 var shortid = require('shortid');
 
 function ChatsModel() {
@@ -18,7 +17,7 @@ function ChatsModel() {
     this.saveChat = (roomCode, data) => {
     	//add id to identify data in sorted set because content cannot be duplicated
     	data.cid = shortid.generate();
-        return this.custom('zadd', roomCode, [Date.now(), JSON.stringify(data)]);
+        return this.custom('zadd', roomCode, [global.system.moment.utc().valueOf(), JSON.stringify(data)]);
     };
 
     this.getLatestChat = (roomCode, page, limit = 10) => {
@@ -32,7 +31,8 @@ function ChatsModel() {
 	                    results.forEach((val, idx) => {
 	                        if ((idx % 2) == 0) {
 	                            var data = JSON.parse(val);
-	                            data.time = moment(results[idx + 1], 'x').format('DD/MM/YYYY HH:mm');
+	                            data.time = global.system.momentz.tz(global.system.moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
+	                            				.format('DD/MM/YYYY HH:mm');
 	                            chats.push(data);
 	                        }
 	                    });

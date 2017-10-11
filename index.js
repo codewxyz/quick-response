@@ -1,11 +1,25 @@
+//first of all, load env var
+require('dotenv-safe').load({
+    allowEmptyValues: true
+});
+
 var app = require('express')();
 var http = require('http').Server(app);
 var nunjucks = require('nunjucks');
 // var io = require('socket.io')(http);
 var serveStatic = require('serve-static');//get static file
 var bodyParser = require('body-parser');//read data from post method
-var moment = require('moment');
 var promise = require("bluebird");
+
+global.system = {
+    app_mode: process.env.ENVIRONMENT,
+    app_name: 'Quick Reponse',
+    app_port: process.env.PORT,
+    redis_url: process.env.REDIS_URL,
+    shortid: require('shortid'),
+    moment: require('moment'),
+    momentz: require('moment-timezone')
+};
 
 //--------------------SESSION FOR APP---------------
 var session = require('express-session');
@@ -13,7 +27,7 @@ var redisStore = require('connect-redis')(session);
 var redisOpts = {
     prefix: 'qr-session:'
 };
-if (process.env.REDIS_URL != undefined && process.env.REDIS_URL != '') {
+if (system.redis_url != '') {
     redisOpts.url = process.env.REDIS_URL;
 } else {  
     redisOpts.host = '127.0.0.1';
@@ -21,10 +35,11 @@ if (process.env.REDIS_URL != undefined && process.env.REDIS_URL != '') {
 }
   
 session = session({ 
-    secret: 'mT7vzH7des',  
+    secret: system.app_mode == 'development' ? 'aaa' : system.shortid.generate(),  
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 360000 },
+    cookie: { maxAge: 60*60*1000 },
+    unset: 'destroy',
     store: new redisStore(redisOpts)
 });
 //session for use in socket.io
@@ -35,7 +50,7 @@ var sharedsession = require("express-socket.io-session")(
 
 //--------------GLOBAL VAR DECLARATION-----------------
 global.qrLog = function() {
-    console.log('-----------System Log: '+moment().format('HH:mm:ss')+'-----------');
+    console.log('-----------System Log: '+global.system.moment.utc().format('HH:mm:ss')+'-----------');
     for (var idx in arguments) {
         console.log(arguments[idx]);
     }
@@ -48,12 +63,6 @@ global.myserver = {
 	node: http,
 	express: app
 };
-global.system = {
-	app_name: 'Quick Reponse',
-    app_port: process.env.PORT != undefined ? process.env.PORT : 3000,
-    redis_url: (process.env.REDIS_URL != undefined) ? process.env.REDIS_URL : '',
-    shortid: require('shortid')
-};
 
 //load models
 global.models = {
@@ -64,6 +73,7 @@ global.models = {
     lists: new (require('./models/lists.js'))()
 };
 global.auth = require('./lib/auth.js');
+
 //----------------LOAD CONTROLLERS----------------------
 var loginController = require('./controllers/login.js');
 var chatController = require('./controllers/chat.js');
@@ -131,7 +141,7 @@ function checkDBConnection() {
     if (models.lists.redis().connected) {
         //server listen
         http.listen(system.app_port, function() {
-            console.log('server listening on *:3000');
+            console.log('server listening on *:'+system.app_port);
         }); 
 
         initServer();

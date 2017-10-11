@@ -265,8 +265,8 @@ function prepareMulti(vals) {
 function prepareData(data) {
     switch (storeType) {
         case 'hash':
-            data.created_at = Date.now();
-            data.updated_at = Date.now();
+            data.created_at = global.system.moment.utc();
+            data.updated_at = global.system.moment.utc();
             break;
         default:
             // statements_def

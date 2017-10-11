@@ -51,10 +51,23 @@
     var g_curSocket = g_socket;
     var g_chatContent = {};
     var g_historyChatPage = {};
+    var g_msgKeyHelper = 0;
+    var g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
 
     connectRooms();
 
     setSocketEvents();
+
+    // Initializes and creates emoji set from sprite sheet
+    window.emojiPicker = new EmojiPicker({
+      emojiable_selector: '[data-emojiable=true]',
+      assetsPath: '../images/emoji/',
+      popupButtonClasses: 'fa fa-smile-o'
+    });
+    // Finds all elements with `emojiable_selector` and converts them to rich emoji input fields
+    // You may want to delay this step if you have dynamically created input fields that appear later in the loading process
+    // It can be called as many times as necessary; previously converted input fields will not be converted again
+    window.emojiPicker.discover();
 
     //reload first messages
     $('.display-msg-content').each(function() {
@@ -62,7 +75,11 @@
     });
 
     //first auto scroll if chat section is long
-    $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+    $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+    setTimeout(() => {
+        g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+    }, 20);
+
 
     $(g_selectorList.chat_container).on('scroll', function () {
         if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] > 0) {
@@ -71,11 +88,15 @@
     });
 
     //send message to server
-    $(g_selectorList.input_msg).on('change', function(event) {
-        console.log(event.which);
+    $(g_selectorList.input_msg).on('keypress, keydown', function(event) {
         var keyCode = event.which;
-        if (keyCode == 13) {
+        if (keyCode == 16) {
+            g_msgKeyHelper = keyCode;
+        }
+        if (keyCode == 13 && g_msgKeyHelper != 16) {
             $('.btn-chat-submit').click();
+        } else if (keyCode == 13 && g_msgKeyHelper == 16) {
+            g_msgKeyHelper = 0;
         }
     });
     $('.btn-chat-submit').on('click', function() {
@@ -470,7 +491,7 @@
 
     //validate input and send to server
     function sendMsg(sk, room) {
-        var content = $(g_selectorList.input_msg).val();
+        var content = $($(g_selectorList.input_msg)[1]).html();
         if (content == '') {
             alert(g_alertMsg.validate_err_01);
             return;
@@ -495,11 +516,14 @@
 
         //check to store or display this message                    
         if (roomCode == g_curRoom) {
-            var oldHeight = $(g_selectorList.chat_container_inner).height();
             $(g_selectorList.chat_container_inner).append(temp);
             //auto scroll to newest message on screen
-            if ($(g_selectorList.chat_container).scrollTop >= oldHeight) {
+            if ((obj.username == g_user.username) || 
+                ($(g_selectorList.chat_container).scrollTop() >= g_scrollChatHelper)) {
                 $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+                setTimeout(() => {
+                    g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+                }, 1020);
             }
         } else {
             if (g_chatContent[roomCode] != undefined) {
@@ -561,6 +585,9 @@
             $(g_selectorList.chat_container_inner).append(temp);
             //auto scroll to newest message on screen
             $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+            setTimeout(() => {
+                g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+            }, 1020);
         }
     }
 
@@ -616,6 +643,14 @@
                 setTimeout(()=>{                        
                     $(g_selectorList.chat_container_overlay).css('display', 'none');
                     $(g_selectorList.chat_container_inner).css('display', 'block');
+                    if ((g_historyChatPage[g_curRoom]-1 ) ==0) {
+                        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+                        setTimeout(() => {
+                            g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+                        }, 20);
+                    } else {
+                        $(g_selectorList.chat_container).animate({ scrollTop: 0 }, 0);
+                    }
                 }, 1000);
             },
             success: function(result, status, xhr) {
@@ -626,7 +661,6 @@
                             chatStr += getFormattedChat(val);
                         });
                         $(g_selectorList.chat_container_inner).prepend(chatStr);
-                        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
                         g_historyChatPage[g_curRoom]++;
                     } else {
                         g_historyChatPage[g_curRoom] = -1;
@@ -646,6 +680,9 @@
         if (g_chatContent[g_curRoom] != null) {
             $(g_selectorList.chat_container_inner).html(g_chatContent[g_curRoom]);
             $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+            setTimeout(() => {
+                g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+            }, 20);
         } else {
             $(g_selectorList.chat_container_inner).html('');
             loadHistoryChatContent();
