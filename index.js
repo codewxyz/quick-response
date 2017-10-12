@@ -113,6 +113,7 @@ app.post('/login', loginController.doLogin);
 app.post('/logout', loginController.doLogout);
 
 app.get('/main', chatController.show);
+app.get('/main/aj/ping', chatController.checkSession);
 app.get('/main/aj/user-search', chatController.searchUser);
 app.post('/main/aj/add-room', chatController.addRoom);
 app.post('/main/aj/add-members', chatController.addRoomMembers);

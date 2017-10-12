@@ -37,6 +37,14 @@ exports.show = (req, res) => {
     });
 };
 
+exports.checkSession = (req, res) => {
+    if (Object.keys(auth.getUser(req)).length > 0) {
+        return res.json({success: true});
+    } else {
+        return res.json({success: false});
+    }
+};
+
 exports.getChatLatest = (req, res) => {
 
     if (!req.body) {        

@@ -55,13 +55,17 @@
     var g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
     var g_shouldNotify = 0;
     var g_isTabActive = 1;
+    var g_prolongSession = setInterval(prolongSession, 55*60*1000);
 
     connectRooms();
 
     setSocketEvents();
 
+    //--------setup for notification--------
     isBrowserTabActive();
     checkNotify();
+
+    //--------setup for emoji input---------
     // Initializes and creates emoji set from sprite sheet
     window.emojiPicker = new EmojiPicker({
         emojiable_selector: '[data-emojiable=true]',
@@ -91,7 +95,9 @@
             loadHistoryChatContent();
         }
     });
-    //send message to server
+
+    //send message to server when enter
+    //combine CTRL+Enter to use multi lines message
     $($(g_selectorList.input_msg)[1]).on('keydown', function(event) {
         var keyCode = event.which;
         if (keyCode == 17) {
@@ -274,6 +280,27 @@
         };
         getMemberList(data);
     });
+
+    function prolongSession() {        
+        $.ajax({
+            url: 'main/aj/ping',
+            type: 'get',
+            dataType: 'json',
+            complete: function(xhr, status) {
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+            },
+            success: function(result, status, xhr) {
+                if (result.success) {
+                    console.log('re-lived the session');
+                } else {
+                    location.href = '/';
+                }
+            }
+        });
+    }
 
     function checkNotify() {
         // Let's check if the browser supports notifications
