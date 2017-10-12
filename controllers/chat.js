@@ -55,7 +55,6 @@ exports.getChatLatest = (req, res) => {
 
     getLatestChat(roomCode, page)
     .then((results) => {
-        logger('get chat', roomCode, results.length);
         var chats = results;
         return res.json({success: true, msg: '', data: chats});
     })
@@ -306,10 +305,8 @@ exports.searchUser = (req, res) => {
         key: keyUserList,
         count: 10
     };
-    logger(req.query.room);
     models.lists.count(keyUserList, 'set')
     .then((total) => {
-        logger(total, searchOption);
         if (total > 0) {
             searchOption.count = total;
             return models.lists.search(searchOption);

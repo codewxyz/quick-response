@@ -259,7 +259,6 @@ exports.addOrg = (req, res) => {
         }
     })
     .then((createResult) => {
-        logger(createResult);
         if (createResult != null && createResult.length == commands.length) {
             return res.json({success: true, msg: 'Created successfully.'});
         } else {

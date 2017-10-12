@@ -54,7 +54,6 @@ function ChatsModel() {
 	            	}
 	            })
 	            .then((results) => {
-	            	logger(results);
 	            	if (results.length == checkUser.length) {
 	            		chats.forEach((val, idx) => {
 	            			var user = results[checkUser.indexOf(val.username)];

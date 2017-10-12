@@ -51,10 +51,8 @@ function register(param, res) {
     delete param.password2;
 
     usersModel.exists(param.username, (err, rep) => {
-        logger(param, err, rep);
         if (rep == 0) {
             usersModel.create(param, (err2, rep2) => {
-                logger('create user', err2, rep2);
                 if (rep2 == 'OK') {
                     return res.redirect('/register?success=1');
                 } else {    

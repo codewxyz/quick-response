@@ -55,7 +55,7 @@
     var g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
     var g_shouldNotify = 0;
     var g_isTabActive = 1;
-    var g_prolongSession = setInterval(prolongSession, 55*60*1000);
+    var g_prolongSession = setInterval(prolongSession, 25*60*1000);//set to 25min to avoid idle of free heroku instance
 
     connectRooms();
 
@@ -604,11 +604,15 @@
     function sendMsg(sk, room) {
         var content = $($(g_selectorList.input_msg)[1]).html().trim();
         content = content.replace('<div><br></div>', '');
-        if (content == '') {
+        if (content.startsWith('<br>')) {
+            content = content.replace('<br>', '');
+        }
+
+        if ((content.split('<br>').join('') == '') || 
+            (content.split('<div><br></div>').join('') == '')) {
             alert(g_alertMsg.validate_err_01);
             return;
         }
-        console.log(content);
         // var getMsg = forge.util.encodeUtf8($($(g_selectorList.input_msg)[1]).html());
         var getMsg = content;
         var msgObj = {
