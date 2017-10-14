@@ -2,7 +2,9 @@
     //connect global channel
     var g_socketOpts = {
         path: '/qrchat',
-        reconnectionAttempts: 5
+        reconnectionAttempts: 5,
+        transports: ['websocket'],
+        upgrade: false
     };
     var g_socket = io('/', g_socketOpts);
     //connect current org channel
@@ -55,7 +57,7 @@
     var g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
     var g_shouldNotify = 0;
     var g_isTabActive = 1;
-    var g_prolongSession = setInterval(prolongSession, 25*60*1000);//set to 25min to avoid idle of free heroku instance
+    var g_prolongSession = setInterval(prolongSession, 55*60*1000);//set to 25min to avoid idle of free heroku instance
 
     connectRooms();
 
@@ -514,12 +516,12 @@
         });
         g_socket.on(g_socketClientEvents.reconnecting_failed, () => {
             console.log('failed to reconnect socket');
-            location.href = '/';
+            // location.href = '/';
         });
         g_socket.on(g_socketClientEvents.error, (err) => {
             console.log('socket connection error');
             console.log(err);
-            location.href = '/';
+            // location.href = '/';
         });
         g_socket.on(g_socketClientEvents.connect, () => {
             console.log('socket connected');

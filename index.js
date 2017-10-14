@@ -16,6 +16,7 @@ global.system = {
     app_name: 'Quick Reponse',
     app_port: process.env.PORT,
     redis_url: process.env.REDIS_URL,
+    session_maxage: 60*60*1000,
     shortid: require('shortid'),
     moment: require('moment'),
     momentz: require('moment-timezone')
@@ -36,9 +37,10 @@ if (system.redis_url != '') {
   
 session = session({ 
     secret: system.app_mode == 'development' ? 'aaa' : system.shortid.generate(),  
-    resave: false,
+    resave: true,
     saveUninitialized: false,
-    cookie: { maxAge: 60*60*1000 },
+    rolling: true,
+    cookie: { maxAge: system.session_maxage },
     unset: 'destroy',
     store: new redisStore(redisOpts)
 });
@@ -98,9 +100,9 @@ app.use(global.auth.onMiddleware());
 //---------------ROUTING-----------------
 app.get('/', function(req, res) {
     if (global.auth.isAuthenticated(req)) {
-    	res.redirect('/main');
+    	return res.redirect('/main');
     } else {
-    	res.redirect('/login');
+    	return res.redirect('/login');
     }
 });
 

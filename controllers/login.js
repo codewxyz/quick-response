@@ -4,8 +4,9 @@ var logger = global.qrLog;
 
 function checkAuth(req, res) {
     if (auth.isAuthenticated(req)) {
-        res.redirect('/main');
+        return true;
     }
+    return false;
 }
 
 function getErrorMsg(code) {
@@ -66,16 +67,18 @@ function register(param, res) {
 }
 
 exports.showLogin = (req, res) => {
-    checkAuth(req, res);
+    if (checkAuth(req, res)) {
+        return res.redirect('/main');
+    } else {
+        var getMsg = '';
+        var queryParam = req.query;
 
-    var getMsg = '';
-    var queryParam = req.query;
+        if (queryParam.error != undefined) {
+            getMsg = getErrorMsg(queryParam.error);
+        }
 
-    if (queryParam.error != undefined) {
-        getMsg = getErrorMsg(queryParam.error);
+        return res.render('login.html', { msg: getMsg });
     }
-
-    res.render('login.html', { msg: getMsg });
 };
 
 exports.doLogin = (req, res) => {
@@ -84,19 +87,22 @@ exports.doLogin = (req, res) => {
 };
 
 exports.showRegister = (req, res) => {
-    checkAuth(req, res);
-    var getMsg = '';
-    var queryParam = req.query;
+    if (checkAuth(req, res)) {
+        return res.redirect('/main');
+    } else {
+        var getMsg = '';
+        var queryParam = req.query;
 
-    if (queryParam.error != undefined) {
-        getMsg = getRegisterErrorMsg(queryParam.error);
+        if (queryParam.error != undefined) {
+            getMsg = getRegisterErrorMsg(queryParam.error);
+        }
+
+        if (queryParam.success != undefined) {
+            getMsg = 'Registered successfully.';
+        }
+
+        return res.render('register.html', { 'msg': getMsg });
     }
-
-    if (queryParam.success != undefined) {
-        getMsg = 'Registered successfully.';
-    }
-
-    res.render('register.html', { 'msg': getMsg });
 };
 
 exports.doRegister = (req, res) => {
@@ -116,15 +122,15 @@ exports.doRegister = (req, res) => {
 
 exports.doLogout = (req, res) => {
     if (!auth.isAuthenticated(req)) {
-        res.redirect('/login');
+        return res.redirect('/login');
     }
     req.session.destroy((err) => {
         if (err != undefined) {
             console.log('session destroy err ' + err);
-            res.redirect('/main');
+           return res.redirect('/main');
         } else {
             console.log('user logged out');
-            res.redirect('/login');
+            return res.redirect('/login');
         }
     });
 };
