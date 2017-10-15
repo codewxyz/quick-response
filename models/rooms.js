@@ -8,10 +8,10 @@
 // 	updated_at: '15012456',
 // 	updated_by: 'userA'
 // };
-delete require.cache[require.resolve('./BaseModel.js')];
+delete require.cache[require.resolve(global.root_dir+'/models/BaseModel.js')];
 
-var BaseModel = require('./BaseModel.js');
-var util = require('util');
+var BaseModel = require(global.root_dir+'/models/BaseModel.js');
+var g_util = require('util');
 var logger = global.qrLog;
 
 function RoomsModel() {
@@ -20,6 +20,6 @@ function RoomsModel() {
     this.defaultCode = 'room';
 }
 
-util.inherits(RoomsModel, BaseModel);
+g_util.inherits(RoomsModel, BaseModel);
 
 module.exports = RoomsModel;

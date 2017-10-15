@@ -4,9 +4,9 @@
 // 	data: ['userA:member', 'userB:admin']
 // };
 
-delete require.cache[require.resolve('./BaseModel.js')];
-var BaseModel = require('./BaseModel.js');
-var util = require('util');
+delete require.cache[require.resolve(global.root_dir+'/models/BaseModel.js')];
+var BaseModel = require(global.root_dir+'/models/BaseModel.js');
+var g_util = require('util');
 var logger = global.qrLog;
 
 function ListsModel() {
@@ -62,6 +62,6 @@ function ListsModel() {
     };
 }
 
-util.inherits(ListsModel, BaseModel);
+g_util.inherits(ListsModel, BaseModel);
 
 module.exports = ListsModel;

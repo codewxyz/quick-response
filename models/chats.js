@@ -3,21 +3,22 @@
 // 	code: 'roomA', --primary key
 // 	data: ['json msg']
 // };
-delete require.cache[require.resolve('./BaseModel.js')];
-var BaseModel = require('./BaseModel.js');
-var userModel = null;
-var util = require('util');
+delete require.cache[require.resolve(global.root_dir+'/models/BaseModel.js')];
+var BaseModel = require(global.root_dir+'/models/BaseModel.js');
+var g_userModel = null;
+var g_util = require('util');
 var logger = global.qrLog;
-var shortid = require('shortid');
+var g_moment = global.common.moment;
+var g_momentz = global.common.momentz;
 
 function ChatsModel() {
     BaseModel.apply(this, ['chats', 'sorted_set']);
-	userModel = new (require('./users.js'))();
+	g_userModel = new (require('./users.js'))();
 
     this.saveChat = (roomCode, data) => {
-    	//add id to identify data in sorted set because content cannot be duplicated
-    	data.cid = shortid.generate();
-        return this.custom('zadd', roomCode, [global.system.moment.utc().valueOf(), JSON.stringify(data)]);
+    	//use time send to make message unique in redis
+    	data.time = g_moment.utc().valueOf();
+        return this.custom('zadd', roomCode, [data.time, JSON.stringify(data)]);
     };
 
     this.getLatestChat = (roomCode, page, limit = 10) => {
@@ -31,7 +32,7 @@ function ChatsModel() {
 	                    results.forEach((val, idx) => {
 	                        if ((idx % 2) == 0) {
 	                            var data = JSON.parse(val);
-	                            data.time = global.system.momentz.tz(global.system.moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
+	                            data.time = g_momentz.tz(g_moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
 	                            				.format('DD/MM/YYYY HH:mm');
 	                            chats.push(data);
 	                        }
@@ -48,7 +49,7 @@ function ChatsModel() {
 	            				checkUser.push(val.username);
 	            			}
 	            		});
-	            		return userModel.batch(commands);
+	            		return g_userModel.batch(commands);
 	            	} else {
 	                	return new promise((resolve, reject) => resolve([]));
 	            	}
@@ -71,6 +72,6 @@ function ChatsModel() {
     };
 }
 
-util.inherits(ChatsModel, BaseModel);
+g_util.inherits(ChatsModel, BaseModel);
 
 module.exports = ChatsModel;

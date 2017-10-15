@@ -13,19 +13,18 @@
 // 	last_login: '1504216',
 // };
 
-delete require.cache[require.resolve(__dirname+'/BaseModel.js')];
-var BaseModel = require(__dirname+'/BaseModel.js');
-var util = require('util');
+delete require.cache[require.resolve(global.root_dir+'/models/BaseModel.js')];
+var BaseModel = require(global.root_dir+'/models/BaseModel.js');
+var g_util = require('util');
 var logger = global.qrLog;
 
 function UsersModel() {
     BaseModel.apply(this, ['users']);
-    this.test = () => {logger('aa test',BaseModel); return this.batch();}
     this.setPK('username');
     this.reserved = ['global', 'admin'];
 
 }
 
-util.inherits(UsersModel, BaseModel);
+g_util.inherits(UsersModel, BaseModel);
 
 module.exports = UsersModel;

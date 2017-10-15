@@ -7,9 +7,9 @@
 // 	updated_at: '15012456',
 // 	updated_by: 'userA'
 // };
-delete require.cache[require.resolve('./BaseModel.js')];
-var BaseModel = require('./BaseModel.js');
-var util = require('util');
+delete require.cache[require.resolve(global.root_dir+'/models/BaseModel.js')];
+var BaseModel = require(global.root_dir+'/models/BaseModel.js');
+var g_util = require('util');
 var logger = global.qrLog;
 
 function OrganizationsModel() {
@@ -19,6 +19,6 @@ function OrganizationsModel() {
     this.defaultCode = 'qrgb';
 }
 
-util.inherits(OrganizationsModel, BaseModel);
+g_util.inherits(OrganizationsModel, BaseModel);
 
 module.exports = OrganizationsModel;

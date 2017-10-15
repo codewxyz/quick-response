@@ -3,56 +3,26 @@ require('dotenv-safe').load({
     allowEmptyValues: true
 });
 
+const APP = require('./config/app.js');
+
 var app = require('express')();
 var http = require('http').Server(app);
-var nunjucks = require('nunjucks');
-// var io = require('socket.io')(http);
+var nunjucks = require('nunjucks').configure('views', {
+    autoescape: true,
+    express: app
+});
 var serveStatic = require('serve-static');//get static file
 var bodyParser = require('body-parser');//read data from post method
 var promise = require("bluebird");
-
-global.system = {
-    app_mode: process.env.ENVIRONMENT,
-    app_name: 'Quick Reponse',
-    app_port: process.env.PORT,
-    redis_url: process.env.REDIS_URL,
-    session_maxage: 60*60*1000,
-    shortid: require('shortid'),
-    moment: require('moment'),
-    momentz: require('moment-timezone')
-};
-
-//--------------------SESSION FOR APP---------------
 var session = require('express-session');
-var redisStore = require('connect-redis')(session);
-var redisOpts = {
-    prefix: 'qr-session:'
-};
-if (system.redis_url != '') {
-    redisOpts.url = process.env.REDIS_URL;
-} else {  
-    redisOpts.host = '127.0.0.1';
-    redisOpts.port = '6379';
-}
-  
-session = session({ 
-    secret: system.app_mode == 'development' ? 'aaa' : system.shortid.generate(),  
-    resave: true,
-    saveUninitialized: false,
-    rolling: true,
-    cookie: { maxAge: system.session_maxage },
-    unset: 'destroy',
-    store: new redisStore(redisOpts)
-});
-//session for use in socket.io
-var sharedsession = require("express-socket.io-session")(
-    session, {
-    autoSave:true
-});
+var redisSession = require('connect-redis')(session);
 
 //--------------GLOBAL VAR DECLARATION-----------------
+global.system = APP.system;
+global.common = APP.common;
+global.root_dir = __dirname;
 global.qrLog = function() {
-    console.log('-----------System Log: '+global.system.moment.utc().format('HH:mm:ss')+'-----------');
+    console.log('-----------System Log: '+global.common.moment.utc().format('HH:mm:ss')+'-----------');
     for (var idx in arguments) {
         console.log(arguments[idx]);
     }
@@ -60,11 +30,8 @@ global.qrLog = function() {
     
 };
 var logger = qrLog;
+
 global.promise = promise;
-global.myserver = {
-	node: http,
-	express: app
-};
 
 //load models
 global.models = {
@@ -74,17 +41,33 @@ global.models = {
     chats: new (require('./models/chats.js'))(),
     lists: new (require('./models/lists.js'))()
 };
+
 global.auth = require('./lib/auth.js');
 
-//----------------LOAD CONTROLLERS----------------------
-var loginController = require('./controllers/login.js');
-var chatController = require('./controllers/chat.js');
-var adminController = require('./controllers/admin.js');
-
-//set up template engine for nunjucks
-nunjucks.configure('views', {
-    autoescape: true,
-    express: app
+//--------------------SESSION FOR APP---------------
+var redisOpts = {
+    prefix: 'qr-session:'
+};
+if (global.system.redis_url != '') {
+    redisOpts.url = global.system.redis_url;
+} else {  
+    redisOpts.host = '127.0.0.1';
+    redisOpts.port = '6379';
+}
+  
+session = session({ 
+    secret: system.app_mode == 'development' ? 'GiEGvn42zy' : global.common.generate(),  
+    resave: true,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: { maxAge: global.system.session_maxage },
+    unset: 'destroy',
+    store: new redisSession(redisOpts)
+});
+//session for use in socket.io
+var sharedsession = require("express-socket.io-session")(
+    session, {
+    autoSave:true
 });
 
 //----------------LOAD MIDDLEWARE TO APP------------------
@@ -98,41 +81,7 @@ app.use(global.auth.onMiddleware());
 
 
 //---------------ROUTING-----------------
-app.get('/', function(req, res) {
-    if (global.auth.isAuthenticated(req)) {
-    	return res.redirect('/main');
-    } else {
-    	return res.redirect('/login');
-    }
-});
-
-app.get('/register', loginController.showRegister);
-app.post('/register', loginController.doRegister);
-
-app.get('/login', loginController.showLogin);
-app.post('/login', loginController.doLogin);
-
-app.post('/logout', loginController.doLogout);
-
-app.get('/main', chatController.show);
-app.get('/main/aj/ping', chatController.checkSession);
-app.get('/main/aj/user-search', chatController.searchUser);
-app.post('/main/aj/add-room', chatController.addRoom);
-app.post('/main/aj/add-members', chatController.addRoomMembers);
-app.post('/main/aj/room-members', chatController.getRoomMembers);
-app.post('/main/aj/chat-latest', chatController.getChatLatest);
-app.post('/main/aj/change-setting', chatController.changeSetting);
-
-app.get('/admin', adminController.show);
-app.get('/admin/search/user', adminController.searchUser);
-app.get('/admin/get/users', adminController.getUsers);
-app.get('/admin/get/orgs', adminController.getOrgs);
-app.get('/admin/get/rooms', adminController.getRooms);
-app.post('/admin/set/org', adminController.addOrg);
-app.post('/admin/set/org-users', adminController.addOrgUsers);
-app.post('/admin/set/room', adminController.addRoom);
-app.post('/admin/set/user', adminController.addUser);
-
+require('./config/route.js')(app);
 
 //------------------STARTUP THE APP SERVER----------
 if (!module.parent) {
@@ -148,6 +97,8 @@ function checkDBConnection() {
         }); 
 
         initServer();
+
+        //run main service
         global.qrService = require('./lib/qr_service.js')(http, sharedsession);
 
         clearInterval(checker);

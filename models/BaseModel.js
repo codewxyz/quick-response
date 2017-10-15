@@ -1,13 +1,15 @@
-var redisPrefix = 'qr-main:';
-var db;
-var table = '';
+var g_redisPrefix = 'qr-main:';
+var g_db;
+var g_table = '';
 var storeType = 'hash';
-var primaryKey = 'code';
+var g_primaryKey = 'code';
 var logger = global.qrLog;
-var promise = global.promise;
+var g_promise = global.common.promise;
+var g_moment = global.common.moment;
+var g_system = global.system;
 
 function BaseModel() {
-    table = arguments[0];
+    g_table = arguments[0];
     if (arguments[1] != undefined) {
         storeType = arguments[1];
     }
@@ -15,22 +17,22 @@ function BaseModel() {
     connect();
 
     this.setPK = (key) => {
-        primaryKey = key;
+        g_primaryKey = key;
     };
 
     this.getKey = (id, hasPrefix=false) => {
         if (hasPrefix)
-            return redisPrefix+getKey(id);
+            return g_redisPrefix+getKey(id);
         else 
             return getKey(id);
     };
 
-    this.redis = () => db;
+    this.redis = () => g_db;
 
     /**
      * run a redis command
      * arguments can be flexible
-     * @return {Promise} [description]
+     * @return {g_promise} [description]
      */
     this.custom = function() {
         var args = Array.from(arguments);
@@ -38,14 +40,14 @@ function BaseModel() {
         var key = getKey(arguments[1]);
         var passArgs = [key].concat(args.slice(2));
 
-        return db[command+'Async'](...passArgs);
+        return g_db[command+'Async'](...passArgs);
     };
 
     /**
-     * perform db commands in transaction
+     * perform g_db commands in transaction
      * get only one result at the end
      * @param  {Array}  commands    list of command to execute
-     * @return {Promise}              [description]
+     * @return {g_promise}              [description]
      */
     this.multi = (commands) => {
         var commandList = [];
@@ -54,14 +56,14 @@ function BaseModel() {
             commandList.push(prepareMulti(commands[i]));
         }
 
-        return db.multi(commandList).execAsync();
+        return g_db.multi(commandList).execAsync();
     };
 
     /**
-     * run multi db command at once
+     * run multi g_db command at once
      *     
      * @param  {String} commands [description]
-     * @return {Promise}          [description]
+     * @return {g_promise}          [description]
      */
     this.batch = (commands) => {
         var commandList = [];
@@ -70,13 +72,13 @@ function BaseModel() {
             commandList.push(prepareMulti(commands[i]));
         }
 
-        return db.batch(commandList).execAsync();
+        return g_db.batch(commandList).execAsync();
     };
 
     this.create = (vals) => {
     	vals = prepareData(vals);
 
-        return new promise(function(resolve, reject) {
+        return new g_promise(function(resolve, reject) {
             switch (storeType) {
                 case 'hash':
                     var arr = [];
@@ -84,13 +86,13 @@ function BaseModel() {
                         arr.push(i);
                         arr.push(vals[i]);
                     }
-                    resolve(dset('hmset', vals[primaryKey], arr));
+                    resolve(dset('hmset', vals[g_primaryKey], arr));
                     break;
                 case 'set':
-                    resolve(dset('sadd', vals[primaryKey], vals.data));
+                    resolve(dset('sadd', vals[g_primaryKey], vals.data));
                     break;
                 default:
-                    reject('no store type set in table '+table);
+                    reject('no store type set in table '+g_table);
                     break;
             }
 
@@ -125,34 +127,34 @@ function BaseModel() {
 
 module.exports = BaseModel;
 
-//----------------------------------HANDLING DB FUNCTIONS-----------------------
+//----------------------------------HANDLING g_db FUNCTIONS-----------------------
 //---------------------------------------------------------------------
 function connect() {
     var redis = require('redis');
 
-    promise.promisifyAll(redis.RedisClient.prototype);
-    promise.promisifyAll(redis.Multi.prototype);
-    var redisUrl = global.system.redis_url;
+    g_promise.promisifyAll(redis.RedisClient.prototype);
+    g_promise.promisifyAll(redis.Multi.prototype);
+    var redisUrl = g_system.redis_url;
     if (redisUrl != '') {
-        db = redis.createClient(redisUrl, {
-            prefix: redisPrefix
+        g_db = redis.createClient(redisUrl, {
+            prefix: g_redisPrefix
         });
     } else {
-        db = redis.createClient({
-            prefix: redisPrefix
+        g_db = redis.createClient({
+            prefix: g_redisPrefix
         });
     }
 
-    db.on('connect', (err) => {
-        logger('Redis connected with ' + redisPrefix + ' on ' + table);
+    g_db.on('connect', (err) => {
+        logger('Redis connected with ' + g_redisPrefix + ' on ' + g_table);
     });
 
-    db.on('end', (err) => {
-        logger('Redis connection ended:', redisPrefix, table, err);
+    g_db.on('end', (err) => {
+        logger('Redis connection ended:', g_redisPrefix, g_table, err);
     });
 
-    db.on('error', (err) => {
-        logger('Redis error:', redisPrefix, table, err);
+    g_db.on('error', (err) => {
+        logger('Redis error:', g_redisPrefix, g_table, err);
     });
 }
 
@@ -160,24 +162,24 @@ function dset(command, id, vals) {
     var key = getKey(id);
     command += 'Async';
 
-    return db[command](key, vals);
+    return g_db[command](key, vals);
 }
 
 function hgetall(id) {
     var key = getKey(id);
-    return db.hgetallAsync(key);
+    return g_db.hgetallAsync(key);
 }
 
 function all() {
-    var key = redisPrefix + table + '*';
-    return db.keysAsync(key);
+    var key = g_redisPrefix + g_table + '*';
+    return g_db.keysAsync(key);
 }
 
 function count(id, type) {
     var key = getKey(id);
     switch (type) {
         case 'set':
-            return db.scardAsync(key);
+            return g_db.scardAsync(key);
         default:
             // statements_def
             break;
@@ -187,11 +189,11 @@ function count(id, type) {
 function search(type, val) {
     switch (type) {
         case 'key':
-            var pattern = redisPrefix + table + val.pattern;
-            return db.keysAsync(pattern);
+            var pattern = g_redisPrefix + g_table + val.pattern;
+            return g_db.keysAsync(pattern);
         case 'set':
             var key = getKey(val.key);
-            return db.sscanAsync(key, 0, 'match', val.pattern, 'count', val.count);
+            return g_db.sscanAsync(key, 0, 'match', val.pattern, 'count', val.count);
         default:
             // statements_def
             break;
@@ -207,7 +209,7 @@ function search(type, val) {
  */
 function exists(id) {
     var key = getKey(id);
-    return db.existsAsync(key);
+    return g_db.existsAsync(key);
 }
 
 /**
@@ -216,12 +218,12 @@ function exists(id) {
  * @return {void}          [description]
  */
 function mexists(id, member) {
-    return new promise(function(resolve, reject) {
+    return new g_promise(function(resolve, reject) {
         if (storeType == 'set') {
-            resolve(db.sismemberAsync(getKey(id), member));
+            resolve(g_db.sismemberAsync(getKey(id), member));
         } else {
             console.trace();
-            reject('store type is not set for table '+table);
+            reject('store type is not set for g_table '+g_table);
         }
     });
 }
@@ -229,11 +231,11 @@ function mexists(id, member) {
 // //----------------------------------SUPPORT FUNCTIONS-----------------------
 // //---------------------------------------------------------------------
 function getKey(id) {
-    return checkKey(id) ? id.replace(redisPrefix, '') : table + ':' + id;
+    return checkKey(id) ? id.replace(g_redisPrefix, '') : g_table + ':' + id;
 }
 
 function checkKey(key) {
-    return (key.indexOf(redisPrefix) == 0);
+    return (key.indexOf(g_redisPrefix) == 0);
 }
 
 function prepareMulti(vals) {
@@ -265,8 +267,8 @@ function prepareMulti(vals) {
 function prepareData(data) {
     switch (storeType) {
         case 'hash':
-            data.created_at = global.system.moment.utc();
-            data.updated_at = global.system.moment.utc();
+            data.created_at = g_moment.utc();
+            data.updated_at = g_moment.utc();
             break;
         default:
             // statements_def

@@ -14,7 +14,15 @@
     </div>
     </div>
 </div>
-<div class="row">
+<div id="page-main">
+<div class="row" style="box-sizing: border-box;">
+    <div class="page-multi-task">
+        <iframe src=""></iframe>
+        <div>
+            <i class="fa fa-expand fa-2x page-multi-task-full"></i>
+            <i class="fa fa-window-close fa-2x page-multi-task-close"></i>
+        </div>
+    </div>
     <div class="col-sm-12">
         <nav class="navbar navbar-default">
             <div class="container-fluid">
@@ -52,45 +60,51 @@
     </div>
 </div>
 <div class="row">
-    <div class="col-sm-4 chat-room-list">
-    <button class="chat-room-btn" id="new-room-btn" title="add new room">
-        <i class="fa fa-plus-circle fa-lg"></i>
-    </button>
-    <a href="javascript:void(0)" class="chat-room chat-active" id="r-room"
-     data-room="room" data-org="W">
-        <span class="chatimg">
-            <img src="./images/room-public.png" alt="chat-room-icon" />
-        </span>
-        <div class="chat-room-info">
-            <div class="chat-room-name">World Room</div>
-            <div class="chat-room-status">
-                Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
-                <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
-                <span class="chat-room-unread badge"></span>
-            </div>
-        </div>
-        <div class="chat-room-change-room"></div>
-    </a>
-    {% for room in rooms %}
-        <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
-         data-room="{{ room.code }}" data-org="{{ room.org }}">
-            <span class="chatimg">
-                <img src="{{ room.avatar }}" alt="chat-room-icon" />
-            </span>
-            <div class="chat-room-info">
-                <div class="chat-room-name">{{ room.name }}</div>
-                <div class="chat-room-status">
-                    Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
-                    <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
-                    <i class="fa fa-user-plus chat-room-add-member" title="add members"></i>&nbsp;&nbsp;
-                    <span class="chat-room-unread badge"></span>
+    <div class="col-sm-3 chat-room-list">
+        <button class="btn chat-room-btn hidden" id="collapse-chat-room-list-btn" type="button" data-toggle="collapse" data-target="#collapse-chat-room-list" 
+        aria-expanded="false" aria-controls="collapse-chat-room-list">
+            <i class="fa fa-bars fa-lg"></i>
+        </button>
+        <button class="btn chat-room-btn" id="new-room-btn" title="add new room">
+            <i class="fa fa-plus-circle fa-lg"></i>
+        </button>
+        <div class="collapse in" id="collapse-chat-room-list">
+            <a href="javascript:void(0)" class="chat-room chat-active" id="r-room"
+             data-room="room" data-org="W">
+                <span class="chatimg">
+                    <img src="./images/room-public.png" alt="chat-room-icon" />
+                </span>
+                <div class="chat-room-info">
+                    <div class="chat-room-name">World Room</div>
+                    <div class="chat-room-status">
+                        Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
+                        <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
+                        <span class="chat-room-unread badge"></span>
+                    </div>
                 </div>
-            </div>
-            <div class="chat-room-change-room"></div>
-        </a>
-    {% endfor %}
+                <div class="chat-room-change-room"></div>
+            </a>
+            {% for room in rooms %}
+            <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
+             data-room="{{ room.code }}" data-org="{{ room.org }}">
+                <span class="chatimg">
+                    <img src="{{ room.avatar }}" alt="chat-room-icon" />
+                </span>
+                <div class="chat-room-info">
+                    <div class="chat-room-name">{{ room.name }}</div>
+                    <div class="chat-room-status">
+                        Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
+                        <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
+                        <i class="fa fa-user-plus chat-room-add-member" title="add members"></i>&nbsp;&nbsp;
+                        <span class="chat-room-unread badge"></span>
+                    </div>
+                </div>
+                <div class="chat-room-change-room"></div>
+            </a>
+            {% endfor %}
+        </div>
     </div>
-    <div class="col-sm-8">
+    <div class="col-sm-9">
         <div class="chatbody">
             <div class="chatbody-overlay">
                 <i class="fa fa-spinner fa-spin fa-2x fa-pulse"></i>
@@ -260,6 +274,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 {% endblock %}
 

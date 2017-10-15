@@ -57,7 +57,8 @@
     var g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
     var g_shouldNotify = 0;
     var g_isTabActive = 1;
-    var g_prolongSession = setInterval(prolongSession, 55*60*1000);//set to 25min to avoid idle of free heroku instance
+    var g_prolongSession = setInterval(prolongSession, 55 * 60 * 1000); //set to 25min to avoid idle of free heroku instance
+    var g_currentFavicon = 'favicon';
 
     connectRooms();
 
@@ -283,7 +284,29 @@
         getMemberList(data);
     });
 
-    function prolongSession() {        
+    function changeFavicon() {
+        var src = '';
+        if (g_currentFavicon == 'favicon' && g_isTabActive == 0) {
+            src = '/images/favicon_active/favicon.ico';
+            g_currentFavicon = 'favicon_active';
+        } else if (g_currentFavicon == 'favicon_active' && g_isTabActive == 1) {
+            src = '/images/favicon/favicon.ico';
+            g_currentFavicon = 'favicon';
+        } else {
+            return;
+        }
+        var link = document.createElement('link'),
+            oldLink = document.getElementById('dynamic-favicon');
+        link.id = 'dynamic-favicon';
+        link.rel = 'shortcut icon';
+        link.href = src;
+        if (oldLink) {
+            document.head.removeChild(oldLink);
+        }
+        document.head.appendChild(link);
+    }
+
+    function prolongSession() {
         $.ajax({
             url: 'main/aj/ping',
             type: 'get',
@@ -296,7 +319,7 @@
             },
             success: function(result, status, xhr) {
                 if (result.success) {
-                    console.log('re-lived the session');
+                    // console.log('re-lived the session');
                 } else {
                     location.href = '/';
                 }
@@ -330,16 +353,17 @@
         return false;
     }
 
-    function createNotify(msg, icon='') {
+    function createNotify(msg, icon = '') {
         // body...
-      var options = {
-          body: msg,
-          icon: icon == '' ? '/images/metro_mail.png' : icon,
-      };
+        var options = {
+            body: msg,
+            icon: icon == '' ? '/images/metro_mail.png' : icon,
+        };
 
-      var n = new Notification('Notification',options);
-      setTimeout(n.close.bind(n), 10000); 
+        var n = new Notification('Notification', options);
+        setTimeout(n.close.bind(n), 10000);
     }
+
     function isBrowserTabActive() {
         // body...
         var hidden, visibilityChange;
@@ -357,18 +381,19 @@
             visibilityChange = "webkitvisibilitychange";
         }
         if (typeof document.addEventListener === "undefined" || typeof document[hidden] === "undefined") {
-          console.log("This requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API.");
+            console.log("This requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API.");
         } else {
-          // Handle page visibility change   
-          document.addEventListener(visibilityChange, function () {
-              if(document[hidden]) {
-                g_isTabActive = 0;
-                g_shouldNotify = 1;
-              } else {
-                g_isTabActive = 1;
-                g_shouldNotify = 0;
-              }
-          }, false);
+            // Handle page visibility change   
+            document.addEventListener(visibilityChange, function() {
+                if (document[hidden]) {
+                    g_isTabActive = 0;
+                    g_shouldNotify = 1;
+                } else {
+                    g_isTabActive = 1;
+                    g_shouldNotify = 0;
+                    changeFavicon();
+                }
+            }, false);
 
         }
     }
@@ -450,14 +475,16 @@
     }
 
     function setSocketEvents() {
-        //-----------for org sockets------------
+        //-----------FOR ORG SOCKETS------------
         for (var i in g_socketOrg) {
             //room events
             g_socketOrg[i].on(g_roomEvents.message, function(msg) {
-                if (g_isTabActive == 0 && 
-                    g_shouldNotify == 1 && msg.username != g_user.username) {
-                    createNotify('Spam mail arrived!');
-                    g_shouldNotify = 0;
+                if (g_isTabActive == 0 && msg.username != g_user.username) {
+                    changeFavicon();
+                    if (g_shouldNotify == 1) {
+                        createNotify('Spam mail arrived!');
+                        g_shouldNotify = 0;
+                    }
                 }
                 insertChat(msg);
             });
@@ -494,12 +521,14 @@
             });
         }
 
-        //------for default socket-----------
+        //------FOR DEFAULT SOCKET-----------
         g_socket.on(g_roomEvents.message, function(msg) {
-            if (g_isTabActive == 0 && 
-                g_shouldNotify == 1 && msg.username != g_user.username) {
-                createNotify('Spam mail arrived!');
-                g_shouldNotify = 0;
+            if (g_isTabActive == 0 && msg.username != g_user.username) {
+                changeFavicon();
+                if (g_shouldNotify == 1) {
+                    createNotify('Spam mail arrived!');
+                    g_shouldNotify = 0;
+                }
             }
             insertChat(msg);
         });
@@ -516,12 +545,12 @@
         });
         g_socket.on(g_socketClientEvents.reconnecting_failed, () => {
             console.log('failed to reconnect socket');
-            // location.href = '/';
+            location.href = '/';
         });
         g_socket.on(g_socketClientEvents.error, (err) => {
             console.log('socket connection error');
             console.log(err);
-            // location.href = '/';
+            location.href = '/';
         });
         g_socket.on(g_socketClientEvents.connect, () => {
             console.log('socket connected');
@@ -610,7 +639,7 @@
             content = content.replace('<br>', '');
         }
 
-        if ((content.split('<br>').join('') == '') || 
+        if ((content.split('<br>').join('') == '') ||
             (content.split('<div><br></div>').join('') == '')) {
             alert(g_alertMsg.validate_err_01);
             return;
