@@ -56,7 +56,7 @@ if (global.system.redis_url != '') {
 }
   
 session = session({ 
-    secret: system.app_mode == 'development' ? 'GiEGvn42zy' : global.common.generate(),  
+    secret: system.app_mode == 'development' ? 'GiEGvn42zy' : global.common.shortid.generate(),  
     resave: true,
     saveUninitialized: false,
     rolling: true,
