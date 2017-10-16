@@ -7,7 +7,7 @@ var g_mainModels = global.models;
 function QRSModel() {
     connect();
 
-    this.keyDefaultRoom = 'room';
+    // this.keyDefaultRoom = 'room';
     this.keyGUserOnline = 'online:users';//all users online currently
     this.getKeyUserDevice = (username) => 'users:' + username + ':devices';//number of devices user used to login currently
     this.getKeyUserRoomOnline = (roomCode) => 'online:rooms:' + roomCode;//users online in specific room
@@ -59,7 +59,7 @@ function QRSModel() {
      */
     this.userOnline = (username, socket) => {
         var commands = [];
-        commands.push(['sadd', this.getKeyUserRoomOnline(this.keyDefaultRoom), username]);
+        commands.push(['sadd', this.getKeyUserRoomOnline(g_mainModels.rooms.defaultCode), username]);
         commands.push(['sadd', this.keyGUserOnline, username]);
         commands.push(['sadd', this.getKeyUserDevice(username), socket.id]);
 
@@ -79,6 +79,7 @@ function QRSModel() {
     this.userOffline = (username, clientId) => {
         return new g_promise((mresolve, mreject) => {
             var commands = [];
+            var rooms = [g_mainModels.rooms.defaultCode];
 
             g_db.scardAsync(this.getKeyUserDevice(username))//get how many device user used to log in
                 .then((result) => {
@@ -97,33 +98,29 @@ function QRSModel() {
                 })
                 .then((results) => {
                     if (results.length > 0) {
-                        for (var i in results) {
-                            commands.push(['srem', this.getKeyUserRoomOnline(results[i]), username]);
-                        }
-
-                        //get all qr-service keys belong to this user
-                        return g_db.keysAsync(this.getKey('users:'+username+':*'));
-                    } else {
-                        return new g_promise((resolve, reject) => resolve([]));
+                        results.forEach((roomCode) => {
+                            commands.push(['srem', this.getKeyUserRoomOnline(roomCode), username]);
+                            rooms.push(roomCode);
+                        });
                     }
+
+                    //get all qr-service keys belong to this user
+                    return g_db.keysAsync(this.getKey('users:'+username+':*'));
                 })
                 .then((results) => {
                     if (results.length > 0) {
                         var keys = results.map((val) => {
                             return getKey(val);
                         });
-                        commands.push(['srem', this.getKeyUserRoomOnline(this.keyDefaultRoom), username]);
-                        commands.push(['srem', this.keyGUserOnline, username]);
                         commands.push(['del'].concat(keys));
-
-                        //run all DB command at once
-                        return this.multi(commands);
-                    } else {
-                        return new g_promise((resolve, reject) => resolve([]));
                     }
+                    commands.push(['srem', this.getKeyUserRoomOnline(g_mainModels.rooms.defaultCode), username]);
+                    commands.push(['srem', this.keyGUserOnline, username]);
+                    //run all DB command at once
+                    return this.multi(commands);
                 })
                 .then((result) => {
-                    mresolve(result);
+                    mresolve(rooms);
                 })
                 .catch((err) => {
                     mreject(err);
