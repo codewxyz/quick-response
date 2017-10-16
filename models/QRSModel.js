@@ -8,10 +8,10 @@ function QRSModel() {
     connect();
 
     this.keyDefaultRoom = 'room';
-    this.keyGUserOnline = 'online:users';
-    this.getKeyUserDevice = (username) => 'users:' + username + ':devices';
-    this.getKeyUserRoomOnline = (roomCode) => 'online:rooms:' + roomCode;
-    this.getKeyUserOrgOnline = (orgCode) => 'online:orgs:' + orgCode;
+    this.keyGUserOnline = 'online:users';//all users online currently
+    this.getKeyUserDevice = (username) => 'users:' + username + ':devices';//number of devices user used to login currently
+    this.getKeyUserRoomOnline = (roomCode) => 'online:rooms:' + roomCode;//users online in specific room
+    this.getKeyUserOrgOnline = (orgCode) => 'online:orgs:' + orgCode;//users online in specific org
 
     this.getKey = (id) => {
         return g_redisPrefix + getKey(id);
@@ -33,6 +33,10 @@ function QRSModel() {
         return g_db[command+'Async'](...passArgs);
     };
 
+    /**
+     * delete all key of this model redis key space
+     * @return {voide} [description]
+     */
     this.cleanRedis = () => {
         g_db.keysAsync(g_redisPrefix + '*')
             .then((results) => {
@@ -45,6 +49,14 @@ function QRSModel() {
             .catch(logger);
     };
 
+    /**
+     * update info when user log in
+     * change online status of user
+     * 
+     * @param  {String} username [description]
+     * @param  {Object} socket   [description]
+     * @return {void}          [description]
+     */
     this.userOnline = (username, socket) => {
         var commands = [];
         commands.push(['sadd', this.getKeyUserRoomOnline(this.keyDefaultRoom), username]);
@@ -55,13 +67,23 @@ function QRSModel() {
             .catch(logger);
     };
 
+    /**
+     * update info when user log out or socket disconnected
+     * delete keys belong to user
+     * delete online status of user
+     * 
+     * @param  {String} username [description]
+     * @param  {String} clientId [description]
+     * @return {Promise}          [description]
+     */
     this.userOffline = (username, clientId) => {
         return new g_promise((mresolve, mreject) => {
             var commands = [];
 
-            g_db.scardAsync(this.getKeyUserDevice(username))
+            g_db.scardAsync(this.getKeyUserDevice(username))//get how many device user used to log in
                 .then((result) => {
                     if (result <= 1) {
+                        //get rooms user belong to
                         return g_mainModels.lists.custom('smembers', g_mainModels.lists.getKeyUserRoom(username));
                     } else {
                         return new g_promise((resolve, reject) => {
@@ -78,18 +100,23 @@ function QRSModel() {
                         for (var i in results) {
                             commands.push(['srem', this.getKeyUserRoomOnline(results[i]), username]);
                         }
-                        return g_db.keysAsync(this.getKey('users:*'));
+
+                        //get all qr-service keys belong to this user
+                        return g_db.keysAsync(this.getKey('users:'+username+':*'));
                     } else {
                         return new g_promise((resolve, reject) => resolve([]));
                     }
                 })
-                .then((results) => { //get user's rooms and delete qr-service keys of user
+                .then((results) => {
                     if (results.length > 0) {
-                        commands.push(['del', results]);
+                        var keys = results.map((val) => {
+                            return getKey(val);
+                        });
                         commands.push(['srem', this.getKeyUserRoomOnline(this.keyDefaultRoom), username]);
                         commands.push(['srem', this.keyGUserOnline, username]);
-                        commands.push(['srem', this.getKeyUserDevice(username), clientId]);
+                        commands.push(['del'].concat(keys));
 
+                        //run all DB command at once
                         return this.multi(commands);
                     } else {
                         return new g_promise((resolve, reject) => resolve([]));
@@ -104,6 +131,11 @@ function QRSModel() {
         });
     };
 
+    /**
+     * add user to a room
+     * @param  {String} roomCode [description]
+     * @return {Promise}          [description]
+     */
     this.joinUsersToRoom = (roomCode) => {
         return new g_promise((mresolve, mreject) => {
             var roomInfo = null;
@@ -198,12 +230,12 @@ function connect() {
         });
     }
 
-    g_db.on('connect', (err) => {
+    g_db.on('connect', () => {
         logger('Redis connected with ' + g_redisPrefix);
     });
 
-    g_db.on('end', (err) => {
-        logger('Redis connection ended:', g_redisPrefix, err);
+    g_db.on('end', () => {
+        logger('Redis connection ended:', g_redisPrefix);
     });
 
     g_db.on('error', (err) => {

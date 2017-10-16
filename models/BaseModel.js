@@ -145,12 +145,12 @@ function connect() {
         });
     }
 
-    g_db.on('connect', (err) => {
+    g_db.on('connect', () => {
         logger('Redis connected with ' + g_redisPrefix + ' on ' + g_table);
     });
 
-    g_db.on('end', (err) => {
-        logger('Redis connection ended:', g_redisPrefix, g_table, err);
+    g_db.on('end', () => {
+        logger('Redis connection ended:', g_redisPrefix, g_table);
     });
 
     g_db.on('error', (err) => {
