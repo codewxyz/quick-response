@@ -1,7 +1,4 @@
 (function ($) {
-	//load first iframe
-	$('.page-multi-task iframe').attr('src', 'http://mazii.net/');
-
 	responsiveSupport();
 
 	//multi task
@@ -48,6 +45,9 @@
     function hideBg() {
         $('.bg-waitting').css('display', 'none');
         $('#page-main').css('invisibility', 'invisible');
+
+		//load first iframe
+		$('.page-multi-task iframe').attr('src', 'http://mazii.net/');
     }
 
     function responsiveSupport(argument) {
@@ -55,7 +55,6 @@
 		var headerHeight = $('.navbar-header').parents().find('.row').height();
 		var deviceHeight = $(window).height();
 		var deviceWidth = $(window).width();
-		console.log(deviceWidth);
 
 		var chatBodyHeight = deviceHeight-headerHeight-70-20-20;
 		//mobile device support
@@ -75,6 +74,9 @@
 
 		$('.page-multi-task').css('height', deviceHeight/2);
 		$('.page-multi-task iframe').css('height', deviceHeight/2-34);
+
+		$('.chatbody').trigger('qrsheightchange', [chatBodyHeight]);
+
     }
     //logout of the app
     $('#do-logout').on('click', function () {

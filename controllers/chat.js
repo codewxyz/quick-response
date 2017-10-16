@@ -397,7 +397,7 @@ function addUsersToRoom(room, userList) {
 }
 
 function getLatestChat(roomCode, page) {
-    return models.chats.getLatestChat(roomCode, page);
+    return models.chats.getLatestChat(roomCode, page, 20);
 }
 
 function getLength(obj) {

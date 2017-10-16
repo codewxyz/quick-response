@@ -55,6 +55,7 @@
     var g_historyChatPage = {};
     var g_msgKeyHelper = 0;
     var g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+    var g_isScrollHorizon = $(g_selectorList.chat_container).scrollLeft();
     var g_shouldNotify = 0;
     var g_isTabActive = 1;
     var g_prolongSession = setInterval(prolongSession, 55 * 60 * 1000); //set to 25min to avoid idle of free heroku instance
@@ -87,15 +88,22 @@
     });
 
     //first auto scroll if chat section is long
-    $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
-    setTimeout(() => {
-        g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
-    }, 20);
+    $(g_selectorList.chat_container).bind('qrsheightchange', function (e, containerHeight) {
+        var height = $(g_selectorList.chat_container_inner).height() < containerHeight ? containerHeight : $(g_selectorList.chat_container_inner).height();
+        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+        setTimeout(() => {
+            g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+        }, 20);
+    });
 
 
     $(g_selectorList.chat_container).on('scroll', function() {
-        if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] > 0) {
-            loadHistoryChatContent();
+        if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] >= 1) {
+            if (g_curRoom == g_worldRoom && g_historyChatPage[g_curRoom] >= 1) {
+                loadHistoryChatContent();
+            } else if (g_historyChatPage[g_curRoom] > 1) {
+                loadHistoryChatContent();
+            }
         }
     });
 
@@ -465,8 +473,6 @@
             g_curRoom = getRoom;
             g_curSocket = g_socketOrg[getNs];
         }
-        console.log('old room ' + oldRoom);
-        console.log('new room ' + g_curRoom);
         loadNewChatContent(oldRoom);
 
         $('.chat-active').removeClass('chat-active');
@@ -786,18 +792,11 @@
                     $('#qr-alert .modal-body').html('Error getting data.');
                     $('#qr-alert').modal('show');
                 }
-                setTimeout(() => {
+
+                setTimeout(()=>{
                     $(g_selectorList.chat_container_overlay).css('display', 'none');
                     $(g_selectorList.chat_container_inner).css('display', 'block');
-                    if ((g_historyChatPage[g_curRoom] - 1) == 0) {
-                        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
-                        setTimeout(() => {
-                            g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
-                        }, 20);
-                    } else {
-                        $(g_selectorList.chat_container).animate({ scrollTop: 0 }, 0);
-                    }
-                }, 1000);
+                }, 500);
             },
             success: function(result, status, xhr) {
                 if (result.success) {
@@ -807,10 +806,16 @@
                             chatStr += getFormattedChat(val);
                         });
                         $(g_selectorList.chat_container_inner).prepend(chatStr);
-                        g_historyChatPage[g_curRoom]++;
-                    } else {
-                        g_historyChatPage[g_curRoom] = -1;
                     }
+                    if (g_historyChatPage[g_curRoom] == 0) {
+                        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+                        setTimeout(() => {
+                            g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+                        }, 20);
+                    } else {
+                        $(g_selectorList.chat_container).animate({ scrollTop: 0 }, 0);
+                    }
+                    g_historyChatPage[g_curRoom]++; 
                 } else {
                     $('#qr-alert .modal-body').html(result.msg);
                     $('#qr-alert').modal('show');
