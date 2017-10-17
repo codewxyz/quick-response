@@ -34,6 +34,8 @@ function ChatsModel() {
 	                            var data = JSON.parse(val);
 	                            data.time = g_momentz.tz(g_moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
 	                            				.format('DD/MM/YYYY HH:mm');
+                				data.datetime = g_momentz.tz(g_moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
+                				.format('DD/MM/YYYY HH:mm');
 	                            chats.push(data);
 	                        }
 	                    });

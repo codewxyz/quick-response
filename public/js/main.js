@@ -1,6 +1,8 @@
 (function ($) {
+
 	responsiveSupport();
 
+	$('[data-toggle="tooltip"]').tooltip();
 	//multi task
 	$('.page-multi-task-close').on('click', function (event) {
 		var deviceHeight = $(window).height();
@@ -47,7 +49,7 @@
         $('#page-main').css('invisibility', 'invisible');
 
 		//load first iframe
-		$('.page-multi-task iframe').attr('src', 'http://mazii.net/');
+		// $('.page-multi-task iframe').attr('src', 'http://mazii.net/');
     }
 
     function responsiveSupport(argument) {

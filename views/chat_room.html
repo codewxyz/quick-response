@@ -118,7 +118,8 @@
                     </td>
                     <td class="display-msg {{ "my-msg" if (chat.username == user.username) }}">
                     <p class="display-msg-header"><span class="display-msg-header-username">{{ chat.name }}</span>&nbsp;&nbsp;
-                    <span class="display-msg-header-time">{{ chat.time }}</span></p>
+                    <span class="display-msg-header-time" data-toggle="tooltip" data-placement="bottom" 
+                        title="{{ chat.time }}">{{ chat.time }}</span></p>
                     <p class="display-msg-content" data-remsg="{{ chat.msg }}">{{ chat.msg }}</p>
                     </td>
                 </tr>

@@ -88,14 +88,16 @@
     });
 
     //first auto scroll if chat section is long
-    $(g_selectorList.chat_container).bind('qrsheightchange', function (e, containerHeight) {
+    $(g_selectorList.chat_container).on('qrsheightchange', function (e, containerHeight) {
         var height = $(g_selectorList.chat_container_inner).height() < containerHeight ? containerHeight : $(g_selectorList.chat_container_inner).height();
         $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
         setTimeout(() => {
             g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
         }, 20);
     });
-
+    $(g_selectorList.chat_container).on('qrschatbodychange', function (e) {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
 
     $(g_selectorList.chat_container).on('scroll', function() {
         if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] >= 1) {
@@ -474,7 +476,7 @@
             g_curSocket = g_socketOrg[getNs];
         }
         loadNewChatContent(oldRoom);
-
+        $(g_selectorList.chat_container).trigger('qrschatbodychange');
         $('.chat-active').removeClass('chat-active');
         $(e).addClass('chat-active');
         $('#r-' + g_curRoom).find('.chat-room-unread').html('');
@@ -677,6 +679,7 @@
                     g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
                 }, 1020);
             }
+            $(g_selectorList.chat_container).trigger('qrschatbodychange');
         } else {
             if (g_chatContent[roomCode] != undefined) {
                 g_chatContent[roomCode] += temp;
@@ -700,7 +703,7 @@
         str += '<td class="avatar ${txt0}"><img src="${txt1}" alt="avatar"/></td>';
         str += '<td class="display-msg ${txt2}">';
         str += '<p class="display-msg-header"><span class="display-msg-header-username">${txt3}</span>&nbsp;&nbsp;';
-        str += '<span class="display-msg-header-time">${txt4}</span></p>';
+        str += '<span class="display-msg-header-time" data-toggle="tooltip" data-placement="bottom" title="${txt6}">${txt4}</span></p>';
         str += '<p class="display-msg-content">${txt5}</p>';
         str += '</td>';
         str += '</tr>';
@@ -710,7 +713,8 @@
             selfClass[1],
             obj.name,
             obj.time,
-            formatMsg(obj.msg)
+            formatMsg(obj.msg),
+            obj.datetime
         ]);
         return temp;
     }
@@ -806,16 +810,22 @@
                             chatStr += getFormattedChat(val);
                         });
                         $(g_selectorList.chat_container_inner).prepend(chatStr);
+                        $(g_selectorList.chat_container).trigger('qrschatbodychange');
                     }
-                    if (g_historyChatPage[g_curRoom] == 0) {
-                        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
-                        setTimeout(() => {
-                            g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
-                        }, 20);
-                    } else {
-                        $(g_selectorList.chat_container).animate({ scrollTop: 0 }, 0);
-                    }
-                    g_historyChatPage[g_curRoom]++; 
+                    var timer = setInterval(() => {
+                        if ($(g_selectorList.chat_container_inner).css('display') == 'block') {
+                            if (g_historyChatPage[g_curRoom] <= 0) {
+                                $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+                                setTimeout(() => {
+                                    g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
+                                }, 20);
+                            } else {
+                                $(g_selectorList.chat_container).animate({ scrollTop: 0 }, 0);
+                            }
+                            g_historyChatPage[g_curRoom]++;
+                            clearInterval(timer);
+                        }
+                    }, 100);
                 } else {
                     $('#qr-alert .modal-body').html(result.msg);
                     $('#qr-alert').modal('show');
