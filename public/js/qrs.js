@@ -88,24 +88,21 @@
     });
 
     //first auto scroll if chat section is long
-    $(g_selectorList.chat_container).on('qrsheightchange', function (e, containerHeight) {
+    $(g_selectorList.chat_container).on('qrsheightchange', function(e, containerHeight) {
         var height = $(g_selectorList.chat_container_inner).height() < containerHeight ? containerHeight : $(g_selectorList.chat_container_inner).height();
         $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
         setTimeout(() => {
             g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
         }, 20);
     });
-    $(g_selectorList.chat_container).on('qrschatbodychange', function (e) {
+    $(g_selectorList.chat_container).on('qrschatbodychange', function(e) {
         $('[data-toggle="tooltip"]').tooltip();
     });
 
     $(g_selectorList.chat_container).on('scroll', function() {
+        console.log(g_historyChatPage[g_curRoom]);
         if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] >= 1) {
-            if (g_curRoom == g_worldRoom && g_historyChatPage[g_curRoom] >= 1) {
-                loadHistoryChatContent();
-            } else if (g_historyChatPage[g_curRoom] > 1) {
-                loadHistoryChatContent();
-            }
+            loadHistoryChatContent();
         }
     });
 
@@ -797,7 +794,7 @@
                     $('#qr-alert').modal('show');
                 }
 
-                setTimeout(()=>{
+                setTimeout(() => {
                     $(g_selectorList.chat_container_overlay).css('display', 'none');
                     $(g_selectorList.chat_container_inner).css('display', 'block');
                 }, 500);
@@ -814,7 +811,7 @@
                     }
                     var timer = setInterval(() => {
                         if ($(g_selectorList.chat_container_inner).css('display') == 'block') {
-                            if (g_historyChatPage[g_curRoom] <= 0) {
+                            if (g_historyChatPage[g_curRoom] < 1) {
                                 $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
                                 setTimeout(() => {
                                     g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
@@ -822,7 +819,7 @@
                             } else {
                                 $(g_selectorList.chat_container).animate({ scrollTop: 0 }, 0);
                             }
-                            g_historyChatPage[g_curRoom]++;
+                            g_historyChatPage[g_curRoom] = result.data.length == 20 ? g_historyChatPage[g_curRoom] + 1 : -1;
                             clearInterval(timer);
                         }
                     }, 100);

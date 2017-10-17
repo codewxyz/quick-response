@@ -24,7 +24,7 @@ function ChatsModel() {
     this.getLatestChat = (roomCode, page, limit = 10) => {
         var chats = [];
 		var checkUser = [];
-		var offset = 10*page;
+		var offset = limit*page;
         return new promise((mresolve, mreject) => {
 	        this.custom('zrevrangebyscore', roomCode, ['+inf', '-inf', 'withscores', 'limit', offset, limit])
 	            .then((results) => {
