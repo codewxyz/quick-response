@@ -87,6 +87,7 @@
     $('body').on('shown.bs.popover', '.has-popover', function (e) {
         var contentE = e.currentTarget;
         var eUsername = $(contentE).data('username');
+        var eName = $(contentE).data('name');
         var eId = $(contentE).data('chatid');
 
         $('#'+$(contentE).attr('aria-describedby'))
@@ -94,16 +95,18 @@
         .each(function (e) {
             $(this).data('username', eUsername);
             $(this).data('chatid', eId);
+            $(this).data('name', eName);
         });
 
         $('body').one('click', function () {
-            $(contentE).popover('hide');
+            $(contentE).popover('destroy');
         });
     });
 
     $('body').on('click', '.popover-user-actions-item', function (e) {
         var action = $(this).data('action');
         var username = $(this).data('username');
+        var name = $(this).data('name');
         var chatid = $(this).data('chatid');
 
         switch (action) {
@@ -111,7 +114,7 @@
                 showUserProfile(username);
                 break;
             case 'quote':
-                getQuote(username, chatid);
+                getQuote(name, chatid);
                 break;
             case 'private-chat':
                 break;
@@ -121,13 +124,16 @@
     });
 
     $('body').on('click', '.has-popover', function (e) {
-        $(e.currentTarget).popover({
-            container: 'body',
-            placement: 'right',
-            trigger: 'manual',
-            html: true,
-            content: $('#popover-user-actions').html()
-        }).popover('show');
+        var contentE = e.currentTarget;
+        if ($(contentE).attr('aria-describedby') == undefined) {
+            $(contentE).popover({
+                container: 'body',
+                placement: 'right',
+                trigger: 'manual',
+                html: true,
+                content: $('#popover-user-actions').html()
+            }).popover('show');
+        }
     });
     //-----------------end user action--------------------
 
@@ -144,12 +150,8 @@
             g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
         }, 20);
     });
-    $(g_selectorList.chat_container).on('qrschatbodychange', function(e) {
-        $('[data-toggle="tooltip"]').tooltip();
-    });
 
     $(g_selectorList.chat_container).on('scroll', function() {
-        console.log(g_historyChatPage[g_curRoom]);
         if ($(this).scrollTop() == 0 && g_historyChatPage[g_curRoom] >= 1) {
             loadHistoryChatContent();
         }
@@ -371,18 +373,22 @@
         });
     }
 
-    function getQuote(username, chatid) {
+    function getQuote(name, chatid) {
         var chatContent = $('#msg-'+chatid).find('.display-msg-content').html();
         var temp = '';
         temp += '<div id="store-quote-'+chatid+'" style="display:none;">';
         temp += '<div class="display-msg-quote">';
-        temp += '<i class="fa fa-quote-left"></i> '+username+':<br/>';
+        temp += '<i class="fa fa-quote-left"></i> <b>'+name+'</b>:<br/>';
         temp += chatContent;
         temp += '</div>';
         temp += '</div>';
         $('body').append(temp);
-        $($(g_selectorList.input_msg)[1]).html('[quote]'+chatid+'[/quote]<br/>');
+        $($(g_selectorList.input_msg)[1]).html('[quote]'+chatid+'[/quote]');
         $(g_selectorList.input_msg).focus();
+        console.log('[quote]'+chatid+'[/quote]'.length);
+        console.log(document.getElementsByClassName('emoji-wysiwyg-editor')[0]);
+
+        window.getSelection().collapse(document.getElementsByClassName('emoji-wysiwyg-editor')[0].firstChild, ('[quote]'+chatid+'[/quote]').length);
     }
 
     function changeFavicon() {
@@ -567,7 +573,6 @@
             g_curSocket = g_socketOrg[getNs];
         }
         loadNewChatContent(oldRoom);
-        $(g_selectorList.chat_container).trigger('qrschatbodychange');
         $('.chat-active').removeClass('chat-active');
         $(e).addClass('chat-active');
         $('#r-' + g_curRoom).find('.chat-room-unread').html('');
@@ -777,7 +782,6 @@
                     g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
                 }, 1020);
             }
-            $(g_selectorList.chat_container).trigger('qrschatbodychange');
         } else {
             if (g_chatContent[roomCode] != undefined) {
                 g_chatContent[roomCode] += temp;
@@ -797,8 +801,12 @@
             selfClass = ['my-avatar', 'my-msg'];
         }
         var str = "";
-        str += '<tr>';
-        str += '<td class="avatar ${txt0}"><img src="${txt1}" alt="avatar"/></td>';
+        str += '<tr id="msg-${txt10}">';
+        str += '<td class="avatar ${txt0}">';
+        str += '<a class="has-popover" role="button" data-chatid="${txt7}" data-username="${txt8}" data-name="${txt9}">';
+        str += '<img src="${txt1}" alt="avatar"/>';
+        str += '</a>';
+        str += '</td>';
         str += '<td class="display-msg ${txt2}">';
         str += '<p class="display-msg-header"><span class="display-msg-header-username">${txt3}</span>&nbsp;&nbsp;';
         str += '<span class="display-msg-header-time" data-toggle="tooltip" data-placement="bottom" title="${txt6}">${txt4}</span></p>';
@@ -812,7 +820,11 @@
             obj.name,
             obj.time,
             formatMsg(obj.msg),
-            obj.datetime
+            obj.datetime,
+            obj.id,
+            obj.username,
+            obj.name,
+            obj.id
         ]);
         return temp;
     }
@@ -908,7 +920,6 @@
                             chatStr += getFormattedChat(val);
                         });
                         $(g_selectorList.chat_container_inner).prepend(chatStr);
-                        $(g_selectorList.chat_container).trigger('qrschatbodychange');
                     }
                     var timer = setInterval(() => {
                         if ($(g_selectorList.chat_container_inner).css('display') == 'block') {

@@ -115,7 +115,7 @@
                 <tr id="msg-{{ chat.id }}">
                     <td class="avatar {{ "my-avatar" if (chat.username == user.username) }}">
                         <a class="has-popover" role="button" data-chatid="{{ chat.id }}" 
-                        data-username="{{ chat.username }}"><img src="{{ chat.avatar }}" alt="avatar" /></a>
+                        data-username="{{ chat.username }}" data-name="{{ chat.name }}"><img src="{{ chat.avatar }}" alt="avatar" /></a>
                     </td>
                     <td class="display-msg {{ "my-msg" if (chat.username == user.username) }}">
                     <p class="display-msg-header"><span class="display-msg-header-username">{{ chat.name }}</span>&nbsp;&nbsp;
@@ -151,7 +151,7 @@
     <div class="list-group">
         <button type="button" class="popover-user-actions-item list-group-item" data-action="profile">Profile</button>
         <button type="button" class="popover-user-actions-item list-group-item" data-action="quote">Quote</button>
-        <button type="button" class="popover-user-actions-item list-group-item" data-action="private-chat">Private Chat</button>
+        <!-- <button type="button" class="popover-user-actions-item list-group-item" data-action="private-chat">Private Chat</button> -->
     </div>
 </div>
 

@@ -1,7 +1,10 @@
 (function ($) {
 	responsiveSupport();
 
-	$('[data-toggle="tooltip"]').tooltip();
+	$('.chatbody').tooltip({
+		container: 'body',
+		selector: '.display-msg-header-time'
+	});
 	//multi task
 	$('.page-multi-task-close').on('click', function (event) {
 		var deviceHeight = $(window).height();
