@@ -44,6 +44,23 @@ exports.checkSession = (req, res) => {
         return res.json({success: false});
     }
 };
+exports.getUserProfile = (req, res) => {
+
+    if (!req.query) {        
+        return res.json({success: false, msg: 'no request param', data: []});
+    }
+    var username = req.query.username;
+
+    models.users.get(username)
+    .then((result) => {
+        delete result.password;
+        return res.json({success: true, msg: '', data: result});
+    })
+    .catch((err) => {
+        logger(err);
+        return res.json({success: false, msg: 'Error getting data.', data: []});
+    });
+};
 
 exports.getChatLatest = (req, res) => {
 

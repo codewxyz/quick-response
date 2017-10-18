@@ -112,9 +112,10 @@
             <table class="table">
                 <tbody>
                 {% for chat in chats %}
-                <tr>
+                <tr id="msg-{{ chat.id }}">
                     <td class="avatar {{ "my-avatar" if (chat.username == user.username) }}">
-                        <img src="{{ chat.avatar }}" alt="avatar" />
+                        <a class="has-popover" role="button" data-chatid="{{ chat.id }}" 
+                        data-username="{{ chat.username }}"><img src="{{ chat.avatar }}" alt="avatar" /></a>
                     </td>
                     <td class="display-msg {{ "my-msg" if (chat.username == user.username) }}">
                     <p class="display-msg-header"><span class="display-msg-header-username">{{ chat.name }}</span>&nbsp;&nbsp;
@@ -145,13 +146,22 @@
 <input type="hidden" id="user" value="{{ user.username }}" data-username="{{ user.username }}" 
     data-name="{{ user.name }}" data-email="{{ user.email }}" data-avatar="{{ user.avatar }}" disabled />
 
+<!-- popover content -->
+<div id="popover-user-actions">
+    <div class="list-group">
+        <button type="button" class="popover-user-actions-item list-group-item" data-action="profile">Profile</button>
+        <button type="button" class="popover-user-actions-item list-group-item" data-action="quote">Quote</button>
+        <button type="button" class="popover-user-actions-item list-group-item" data-action="private-chat">Private Chat</button>
+    </div>
+</div>
+
 <!-- Modal -->
-<div class="modal fade" id="qr-modal-room" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade" id="qr-modal-room" tabindex="-1" role="dialog" >
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Add Room</h4>
+        <h4 class="modal-title">Add Room</h4>
       </div>
       <div class="modal-body">
         <form id="fm-room">
@@ -179,12 +189,12 @@
 </div>
 
 <!-- Modal -->
-<div class="modal fade" id="qr-modal-add-member" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade" id="qr-modal-add-member" tabindex="-1" role="dialog" >
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Add Members</h4>
+        <h4 class="modal-title">Add Members</h4>
       </div>
       <div class="modal-body">
         <form id="fm-add-member">
@@ -209,12 +219,12 @@
 </div>
 
 <!-- Modal -->
-<div class="modal fade" id="qr-modal-room-list-member" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade" id="qr-modal-room-list-member" tabindex="-1" role="dialog" >
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Members</h4>
+        <h4 class="modal-title">Members</h4>
       </div>
       <div class="modal-body">
         <table class="table table-hover qr-modal-room-list-member-table">
@@ -233,12 +243,47 @@
 </div>
 
 <!-- Modal -->
-<div class="modal fade" id="qr-modal-setting" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade" id="qr-modal-user-profile" tabindex="-1" role="dialog" >
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Setting</h4>
+        <h4 class="modal-title">User Profile</h4>
+      </div>
+      <div class="modal-body">
+        <table class="table">
+            <tr>
+                <th></th>
+                <td  id="qr-modal-user-profile-avatar"><img class="img-circle img-responsive" src="" alt="avatar" width="50" /></td>
+            </tr>
+            <tr>
+                <th>Username</th>
+                <td id="qr-modal-user-profile-username"></td>
+            </tr>
+            <tr>
+                <th>Name</th>
+                <td id="qr-modal-user-profile-name"></td>
+            </tr>
+            <tr>
+                <th>E-mail</th>
+                <td id="qr-modal-user-profile-mail"></td>
+            </tr>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="qr-modal-setting" tabindex="-1" role="dialog" >
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Setting</h4>
       </div>
       <div class="modal-body">
         <p>Note: To update the changes, you will be forced to re-login.</p>

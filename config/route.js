@@ -22,6 +22,7 @@ module.exports = (app) => {
 
 	app.get('/main', chatController.show);
 	app.get('/main/aj/ping', chatController.checkSession);
+	app.get('/main/aj/user-profile', chatController.getUserProfile);
 	app.get('/main/aj/user-search', chatController.searchUser);
 	app.post('/main/aj/add-room', chatController.addRoom);
 	app.post('/main/aj/add-members', chatController.addRoomMembers);

@@ -1,7 +1,9 @@
-//format for a chat room record
+//format for a private chat for one:one between users
+//room code rule: userA-userB (userB-userA is the same and one, cannot be duplicated)
 // var obj = {
-// 	code: 'roomA', --primary key
-// 	data: ['json msg']
+// 	code: 'userA-userB', --primary key
+// 	msg: ['json msg'],
+// 	time: 151201201 (milliseconds)
 // };
 delete require.cache[require.resolve(global.root_dir+'/models/BaseModel.js')];
 var BaseModel = require(global.root_dir+'/models/BaseModel.js');
@@ -11,7 +13,7 @@ var logger = global.qrLog;
 var g_moment = global.common.moment;
 var g_momentz = global.common.momentz;
 
-function ChatsModel() {
+function PrivatesModel() {
     BaseModel.apply(this, ['chats', 'sorted_set']);
 	g_userModel = new (require('./users.js'))();
 
@@ -32,7 +34,6 @@ function ChatsModel() {
 	                    results.forEach((val, idx) => {
 	                        if ((idx % 2) == 0) {
 	                            var data = JSON.parse(val);
-                				data.id = data.time;
 	                            data.time = g_momentz.tz(g_moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
 	                            				.format('DD/MM/YYYY HH:mm');
                 				data.datetime = g_momentz.tz(g_moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
@@ -75,6 +76,6 @@ function ChatsModel() {
     };
 }
 
-g_util.inherits(ChatsModel, BaseModel);
+g_util.inherits(PrivatesModel, BaseModel);
 
-module.exports = ChatsModel;
+module.exports = PrivatesModel;

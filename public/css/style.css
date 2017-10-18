@@ -105,9 +105,12 @@ body {
 }
 
 .avatar {
-    width: 50px;
+    width: 35px;
 }
-
+.avatar a {
+    cursor: pointer;
+    display: block;
+}
 .avatar img {
     width: 35px;
     height: 35px;
@@ -198,7 +201,27 @@ body {
 .display-msg p {
     margin: 0;
 }
+.display-msg-quote {
+    font-size: 0.9em;
+    color: #808080;
+    padding-left: 10px;
+}
 
+#popover-user-actions {
+    display: none;
+}
+.popover-content .list-group {
+    margin: 0 !important;
+}
+.popover-content .list-group-item {
+    padding: 0 5px !important;
+    text-align: center !important;
+    border: 1px solid #58BAC1;
+}
+.popover-content .list-group-item:hover {
+    color: white !important;
+    background-color: #58BAC1 !important;
+}
 .bg-waitting {
     background-color: white;
     position: fixed;

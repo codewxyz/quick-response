@@ -1,5 +1,4 @@
 (function ($) {
-
 	responsiveSupport();
 
 	$('[data-toggle="tooltip"]').tooltip();

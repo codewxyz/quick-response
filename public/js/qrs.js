@@ -81,6 +81,55 @@
     // It can be called as many times as necessary; previously converted input fields will not be converted again
     window.emojiPicker.discover();
     $(g_selectorList.input_msg).focus();
+    //--------end setup for emoji input---------
+
+    //-----------------user actons------------------
+    $('body').on('shown.bs.popover', '.has-popover', function (e) {
+        var contentE = e.currentTarget;
+        var eUsername = $(contentE).data('username');
+        var eId = $(contentE).data('chatid');
+
+        $('#'+$(contentE).attr('aria-describedby'))
+        .find('.list-group-item')
+        .each(function (e) {
+            $(this).data('username', eUsername);
+            $(this).data('chatid', eId);
+        });
+
+        $('body').one('click', function () {
+            $(contentE).popover('hide');
+        });
+    });
+
+    $('body').on('click', '.popover-user-actions-item', function (e) {
+        var action = $(this).data('action');
+        var username = $(this).data('username');
+        var chatid = $(this).data('chatid');
+
+        switch (action) {
+            case 'profile':
+                showUserProfile(username);
+                break;
+            case 'quote':
+                getQuote(username, chatid);
+                break;
+            case 'private-chat':
+                break;
+            default:
+                break;
+        }
+    });
+
+    $('body').on('click', '.has-popover', function (e) {
+        $(e.currentTarget).popover({
+            container: 'body',
+            placement: 'right',
+            trigger: 'manual',
+            html: true,
+            content: $('#popover-user-actions').html()
+        }).popover('show');
+    });
+    //-----------------end user action--------------------
 
     //reload first messages
     $('.display-msg-content').each(function() {
@@ -291,6 +340,51 @@
         getMemberList(data);
     });
 
+    function showUserProfile(username) {
+        $.ajax({
+            url: 'main/aj/user-profile?username='+username,
+            type: 'get',
+            dataType: 'json',
+            complete: function(xhr, status) {
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error getting data.');
+                    $('#qr-alert').modal('show');
+                }
+            },
+            success: function(result, status, xhr) {
+                if (result.success) {
+                    var user = result.data;
+                    $('#qr-modal-user-profile-avatar img').attr('src', user.avatar);
+                    $('#qr-modal-user-profile-username').text(user.username);
+                    $('#qr-modal-user-profile-name').text(user.name);
+                    $('#qr-modal-user-profile-mail').text(user.email);
+                    $('#qr-modal-user-profile').modal('show');
+                } else {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                }
+            }
+        });
+    }
+
+    function getQuote(username, chatid) {
+        var chatContent = $('#msg-'+chatid).find('.display-msg-content').html();
+        var temp = '';
+        temp += '<div id="store-quote-'+chatid+'" style="display:none;">';
+        temp += '<div class="display-msg-quote">';
+        temp += '<i class="fa fa-quote-left"></i> '+username+':<br/>';
+        temp += chatContent;
+        temp += '</div>';
+        temp += '</div>';
+        $('body').append(temp);
+        $($(g_selectorList.input_msg)[1]).html('[quote]'+chatid+'[/quote]<br/>');
+        $(g_selectorList.input_msg).focus();
+    }
+
     function changeFavicon() {
         var src = '';
         if (g_currentFavicon == 'favicon' && g_isTabActive == 0) {
@@ -435,7 +529,7 @@
                         var temp = '';
                         temp += '<tr>';
                         temp += '<td>';
-                        temp += '<img src="${txt0}" alt="avatar" class="img-responsive img-thumbnail" width="50px"/>';
+                        temp += '<img src="${txt0}" alt="avatar" class="img-responsive img-circle" width="50"/>';
                         temp += '</td>';
                         temp += '<td>';
                         temp += '${txt1}';
@@ -650,7 +744,14 @@
             return;
         }
         // var getMsg = forge.util.encodeUtf8($($(g_selectorList.input_msg)[1]).html());
+        // add quote if exist
+        var quotes = content.split('[/quote]');
+        var getQuote = '';
         var getMsg = content;
+        if (quotes.length == 2) {
+            getQuote = $('#store-quote-'+quotes[0].split('[quote]')[1]).html();
+            getMsg = getQuote+quotes[1];
+        }
         var msgObj = {
             content: getMsg,
             roomCode: room,

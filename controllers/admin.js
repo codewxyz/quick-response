@@ -131,11 +131,18 @@ exports.getRooms = (req, res) => {
 exports.addUser = (req, res) => {
     var formParam = req.body;
     //--------------validate user information-----------
-    if (formParam.username == '' || formParam.name == '' || formParam.password == '') {
-        return res.json({success: false, msg: 'Invalid data.'});
+    formParam = formParam.map((val)=>{
+        return val.trim();
+    });
+    var rg = new RegExp(/^[a-zA-Z0-9\_]{3,}$/i);
+    if (!rg.test(formParam.code)) {
+        return res.json({success: false, msg: 'Invalid username (min length is 3 characters, special characters are not allowed).'});            
+    }
+    if (formParam.name == '' || formParam.password == '') {
+        return res.json({success: false, msg: 'Please fill in required fields.'});
     }
     if (formParam.password != formParam.password2) {
-        return res.json({success: false, msg: 'Invalid data.'});
+        return res.json({success: false, msg: 'Passwords do not match.'});
     }
 
     //-------------format data to save---------------
@@ -143,6 +150,7 @@ exports.addUser = (req, res) => {
         formParam.avatar = './images/default-user.png';
     }
     delete formParam.password2;
+    formParam.username = formParam.username.toLowerCase();
 
     var commands = [
         ['hmset', formParam.username, formParam],//create user
@@ -230,14 +238,17 @@ exports.addRoom = (req, res) => {
 exports.addOrg = (req, res) => {
     var formParam = req.body;
     //-------------validate data-----------------
-    var rg = new RegExp(/^[a-zA-Z0-9\-\_]{3,}$/i);
+    var rg = new RegExp(/^[a-zA-Z0-9\_]{3,}$/i);
     formParam.code = formParam.code.trim();
     if (!rg.test(formParam.code)) {
-        return res.json({success: false, msg: 'Code is required and cannot contain special characters (except: "-" and "_").'});            
+        return res.json({success: false, msg: 'Invalid code (min length is 3 characters, special characters are not allowed).'});            
     }
     if (0 == formParam.name.length || formParam.name.length > 50) {
         return res.json({success: false, msg: 'Name is required and has maximum length of 50 charactrers.'});
     }
+
+    //----------format data-----------------
+    formParam.code = formParam.code.toLowerCase();
 
     var commands = [
         ['hmset', formParam.code, formParam],
