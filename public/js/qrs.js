@@ -375,6 +375,10 @@
 
     function getQuote(name, chatid) {
         var chatContent = $('#msg-'+chatid).find('.display-msg-content').html();
+        var findQuote = chatContent.match(/<div class="display-msg-quote">(.*?)<\/div>/g);
+        if (findQuote != null && findQuote.length > 0) {
+            chatContent = chatContent.replace(findQuote[0], '');
+        }
         var temp = '';
         temp += '<div id="store-quote-'+chatid+'" style="display:none;">';
         temp += '<div class="display-msg-quote">';
@@ -383,12 +387,14 @@
         temp += '</div>';
         temp += '</div>';
         $('body').append(temp);
+
         $($(g_selectorList.input_msg)[1]).html('[quote]'+chatid+'[/quote]');
         $(g_selectorList.input_msg).focus();
-        console.log('[quote]'+chatid+'[/quote]'.length);
-        console.log(document.getElementsByClassName('emoji-wysiwyg-editor')[0]);
 
-        window.getSelection().collapse(document.getElementsByClassName('emoji-wysiwyg-editor')[0].firstChild, ('[quote]'+chatid+'[/quote]').length);
+        window.getSelection().collapse(
+            document.getElementsByClassName('emoji-wysiwyg-editor')[0].firstChild, 
+            ('[quote]'+chatid+'[/quote]').length
+        );
     }
 
     function changeFavicon() {
@@ -738,24 +744,33 @@
     //validate input and send to server
     function sendMsg(sk, room) {
         var content = $($(g_selectorList.input_msg)[1]).html().trim();
-        content = content.replace('<div><br></div>', '');
-        if (content.startsWith('<br>')) {
-            content = content.replace('<br>', '');
-        }
+        // content = content.replace('<div><br></div>', '');
+        // if (content.startsWith('<br>')) {
+        //     content = content.replace('<br>', '');
+        // }
 
         if ((content.split('<br>').join('') == '') ||
             (content.split('<div><br></div>').join('') == '')) {
             alert(g_alertMsg.validate_err_01);
             return;
         }
-        // var getMsg = forge.util.encodeUtf8($($(g_selectorList.input_msg)[1]).html());
+        var checkContent = content.match(/<div>(.*?)<\/div>/g);
+        if (checkContent != null ) {
+            content = content.split('<div>')[0] == '' ? '' : content.split('<div>')[0] + '<br>';
+            content = content.split('<div>')[0]+checkContent.filter((val) => {                
+                var newContent = val.replace(/(<br>)*<\/?div>/g,'').replace('<br>', '');
+                return newContent != '';
+            }).map(function(val){
+                return val.replace(/(<br>)*<\/?div>/g,'').replace('<br>', '');
+            }).join('<br/>');
+        }
         // add quote if exist
-        var quotes = content.split('[/quote]');
+        var quotes = content.match(/\[quote\](.*?)\[\/quote\]/g);
         var getQuote = '';
         var getMsg = content;
-        if (quotes.length == 2) {
-            getQuote = $('#store-quote-'+quotes[0].split('[quote]')[1]).html();
-            getMsg = getQuote+quotes[1];
+        if (quotes != null && quotes.length > 0) {
+            getQuote = $('#store-quote-'+quotes[0].replace(/\[\/?quote\]/g,'')).html();
+            getMsg = getQuote+content.replace(quotes[0], '');
         }
         var msgObj = {
             content: getMsg,
