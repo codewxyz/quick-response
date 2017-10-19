@@ -88,14 +88,25 @@
         var contentE = e.currentTarget;
         var eUsername = $(contentE).data('username');
         var eName = $(contentE).data('name');
+        var eAvatar = $(contentE).data('avatar');
         var eId = $(contentE).data('chatid');
 
         $('#'+$(contentE).attr('aria-describedby'))
         .find('.list-group-item')
         .each(function (e) {
+
+            if ($(this).data('action') == 'private-chat' 
+                && g_user.username == eUsername) {
+                $(this).addClass('disabled');
+                $(this).prop('disabled', true);
+                return;
+            }
+
             $(this).data('username', eUsername);
             $(this).data('chatid', eId);
             $(this).data('name', eName);
+            $(this).data('avatar', eAvatar);
+            $(this).data('popoverid', $(contentE).attr('aria-describedby'));
         });
 
         $('body').one('click', function () {
@@ -105,18 +116,25 @@
 
     $('body').on('click', '.popover-user-actions-item', function (e) {
         var action = $(this).data('action');
-        var username = $(this).data('username');
-        var name = $(this).data('name');
-        var chatid = $(this).data('chatid');
+        var popoverid = $(this).data('popoverid');
+        var uObj = {
+            username: $(this).data('username'),
+            name: $(this).data('name'),
+            avatar: $(this).data('avatar'),
+            chatid: $(this).data('chatid')
+        };
 
         switch (action) {
             case 'profile':
-                showUserProfile(username);
+                showUserProfile(uObj);
                 break;
             case 'quote':
-                getQuote(name, chatid);
+                getQuote(uObj);
                 break;
             case 'private-chat':
+                $('body').click();
+                $('a[aria-describedby='+popoverid+']').removeAttr('aria-describedby');
+                initPrivateChat(uObj);
                 break;
             default:
                 break;
@@ -181,7 +199,7 @@
         $('#qr-modal-room').modal('show');
     });
 
-    $('.chat-room-add-member').on('click', function() {
+    $('.chat-room-list').on('click', '.chat-room-add-member', function() {
         $('#fm-add-member-room').val($(this).parent().parent().find('.chat-room-name').html());
         $('#fm-add-member-room-code').val($(this).parents().filter('.chat-room').data('room'));
         $('#fm-add-member-org-code').val($(this).parents().filter('.chat-room').data('org'));
@@ -326,14 +344,14 @@
         $('#fm-setting-repassword').val('');
     });
 
-    $('.chat-room-change-room').on('click', function() {
+    $('.chat-room-list').on('click', '.chat-room-change-room', function() {
         var parent = $(this).parent();
         var getNs = $(parent).data('org');
         var getRoom = $(parent).data('room');
         changeChatRoom(getNs, getRoom, parent);
     });
 
-    $('.chat-room-list-member').on('click', function() {
+    $('.chat-room-list').on('click', '.chat-room-list-member', function() {
         var parent = $(this).parents().filter('.chat-room');
         var roomCode = parent.data('room');
         var data = {
@@ -342,7 +360,35 @@
         getMemberList(data);
     });
 
-    function showUserProfile(username) {
+    function initPrivateChat(obj) {
+        //user cannot private himself
+        if (g_user.username == obj.username) {
+            return;
+        }
+        var roomOpts = {
+            code: g_user.username+'-'+obj.username,
+            avatar: obj.avatar,
+            name: obj.name,
+            org: 'qrprivate'
+        };
+        //check if private room is existed on screen
+        //swith to that room
+        if($('#r-'+g_user.username+'-'+obj.username).length > 0) {
+            changeChatRoom(g_socket, roomOpts.code, $('#r-'+g_user.username+'-'+obj.username));
+        } else if ($('#r-'+obj.username+'-'+g_user.username).length > 0) {
+            changeChatRoom(g_socket, roomOpts.code, $('#r-'+obj.username+'-'+g_user.username));
+        }
+
+        //if not, create new room to begin chat
+        var temp = getPrivateRoomTemplate(roomOpts);
+
+        var parseHtml = $.parseHTML($.trim(temp));
+        $('#collapse-chat-room-list').append(parseHtml);
+        changeChatRoom(g_socket, roomOpts.code, parseHtml);
+    }
+
+    function showUserProfile(obj) {
+        var username = obj.username;
         $.ajax({
             url: 'main/aj/user-profile?username='+username,
             type: 'get',
@@ -373,7 +419,10 @@
         });
     }
 
-    function getQuote(name, chatid) {
+    function getQuote(obj) {
+        var chatid = obj.chatid;
+        var name = obj.name;
+
         var chatContent = $('#msg-'+chatid).find('.display-msg-content').html();
         var findQuote = chatContent.match(/<div class="display-msg-quote">(.*?)<\/div>/g);
         if (findQuote != null && findQuote.length > 0) {
@@ -388,12 +437,13 @@
         temp += '</div>';
         $('body').append(temp);
 
-        $($(g_selectorList.input_msg)[1]).html('[quote]'+chatid+'[/quote]');
+        var representQuote = '[quote]'+chatid+'[/quote]';
+        $($(g_selectorList.input_msg)[1]).html(representQuote);
         $(g_selectorList.input_msg).focus();
 
         window.getSelection().collapse(
             document.getElementsByClassName('emoji-wysiwyg-editor')[0].firstChild, 
-            ('[quote]'+chatid+'[/quote]').length
+            representQuote.length
         );
     }
 
@@ -568,14 +618,14 @@
         });
     }
 
-    function changeChatRoom(getNs, getRoom, e) {
+    function changeChatRoom(getNs, getRoomCode, e) {
         var oldRoom = g_curRoom;
 
         if (getNs == 'W') {
             g_curRoom = g_worldRoom;
             g_curSocket = g_socket;
         } else {
-            g_curRoom = getRoom;
+            g_curRoom = getRoomCode;
             g_curSocket = g_socketOrg[getNs];
         }
         loadNewChatContent(oldRoom);
@@ -674,7 +724,33 @@
         g_socketOrg[room.org].emit(g_orgEvents.new_room, obj);
     }
 
-    function displayNewRoom(room) {
+    function getPrivateRoomTemplate(room) {
+        var temp = '';
+        temp += '<a href="javascript:void(0)" class="chat-room" id="r-${txt0}"';
+        temp += 'data-room="${txt1}" data-org="${txt2}">';
+        temp += '<span class="chatimg">';
+        temp += '<img src="${txt3}" />';
+        temp += '</span>';
+        temp += '<div class="chat-room-info">';
+        temp += '<div class="chat-room-name">${txt4}</div>';
+        temp += '<div class="chat-room-status">';
+        temp += 'Status: <span class="chat-room-private-status">checking...</span>&nbsp;&nbsp;';
+        temp += '<span class="chat-room-unread badge"></span>';
+        temp += '</div>';
+        temp += '</div>';
+        temp += '<div class="chat-room-change-room"></div>';
+        temp += '</a>';
+        temp = formatTxt(temp, [
+            room.code,
+            room.code,
+            room.org,
+            room.avatar,
+            room.name
+        ]);
+        return temp;
+    }
+
+    function getRoomTemplate(room) {
         var temp = '';
         temp += '<a href="javascript:void(0)" class="chat-room" id="r-${txt0}"';
         temp += 'data-room="${txt1}" data-org="${txt2}">';
@@ -699,36 +775,18 @@
             room.avatar,
             room.name
         ]);
+        return temp;
+    }
+
+    function displayNewRoom(room) {
+        var temp = getRoomTemplate(room);
         var parseHtml = $.parseHTML($.trim(temp));
-        $('.chat-room-list').append(parseHtml);
+        $('#collapse-chat-room-list').append(parseHtml);
 
         //save chat content of this room
         g_chatContent[room.code] = '';
         g_historyChatPage[room.code] = -1;
 
-        //add event to this room DOM node
-        $(parseHtml).find('.chat-room-change-room').on('click', function() {
-            var parent = $(this).parent();
-            var getNs = $(parent).data('org');
-            var getRoom = $(parent).data('room');
-            changeChatRoom(getNs, getRoom, parent);
-        });
-
-        $(parseHtml).find('.chat-room-list-member').on('click', function() {
-            var parent = $(this).parents().filter('.chat-room');
-            var roomCode = parent.data('room');
-            var data = {
-                roomCode: roomCode
-            };
-            getMemberList(data);
-        });
-
-        $(parseHtml).find('.chat-room-add-member').on('click', function() {
-            $('#fm-add-member-room').val($(this).parent().parent().find('.chat-room-name').html());
-            $('#fm-add-member-room-code').val($(this).parents().filter('.chat-room').data('room'));
-            $('#fm-add-member-org-code').val($(this).parents().filter('.chat-room').data('org'));
-            $('#qr-modal-add-member').modal('show');
-        });
         //change seleted room to this room
         changeChatRoom(room.org, room.code, parseHtml);
     }
@@ -771,6 +829,8 @@
         if (quotes != null && quotes.length > 0) {
             getQuote = $('#store-quote-'+quotes[0].replace(/\[\/?quote\]/g,'')).html();
             getMsg = getQuote+content.replace(quotes[0], '');
+            //remove stored quote DOM
+            $('#store-quote-'+quotes[0].replace(/\[\/?quote\]/g,'')).remove();
         }
         var msgObj = {
             content: getMsg,
@@ -784,7 +844,7 @@
     function insertChat(obj) {
         roomCode = obj.roomCode;
         // obj.msg = forge.util.decodeUtf8(obj.msg);
-        var temp = getFormattedChat(obj);
+        var temp = getDisplayMessageTemplate(obj);
 
         //check to store or display this message                    
         if (roomCode == g_curRoom) {
@@ -806,10 +866,14 @@
 
             var unreadhHtml = $('#r-' + roomCode).find('.chat-room-unread').html();
             $('#r-' + roomCode).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml) + 1);
+            if (roomCode != g_worldRoom) {
+                var roomNode = $('#r-' + roomCode).detach();
+                $('#r-'+g_worldRoom).after(roomNode);
+            }
         }
     }
 
-    function getFormattedChat(obj) {
+    function getDisplayMessageTemplate(obj) {
         roomCode = obj.roomCode;
         var selfClass = '';
         if (g_user.username == obj.username) {
@@ -932,7 +996,7 @@
                     var chatStr = '';
                     if (result.data.length > 0) {
                         result.data.forEach((val) => {
-                            chatStr += getFormattedChat(val);
+                            chatStr += getDisplayMessageTemplate(val);
                         });
                         $(g_selectorList.chat_container_inner).prepend(chatStr);
                     }

@@ -222,6 +222,10 @@ body {
     color: white !important;
     background-color: #58BAC1 !important;
 }
+.popover-content .disabled:hover {
+    color: #777 !important;
+    background-color: #eee !important;
+}
 .bg-waitting {
     background-color: white;
     position: fixed;
