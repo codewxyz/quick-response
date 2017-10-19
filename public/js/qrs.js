@@ -95,8 +95,8 @@
         .find('.list-group-item')
         .each(function (e) {
 
-            if ($(this).data('action') == 'private-chat' 
-                && g_user.username == eUsername) {
+            if ( ($(this).data('action') == 'private-chat') && 
+                (g_user.username == eUsername)) {
                 $(this).addClass('disabled');
                 $(this).prop('disabled', true);
                 return;
@@ -106,7 +106,6 @@
             $(this).data('chatid', eId);
             $(this).data('name', eName);
             $(this).data('avatar', eAvatar);
-            $(this).data('popoverid', $(contentE).attr('aria-describedby'));
         });
 
         $('body').one('click', function () {
@@ -729,7 +728,7 @@
         temp += '<a href="javascript:void(0)" class="chat-room" id="r-${txt0}"';
         temp += 'data-room="${txt1}" data-org="${txt2}">';
         temp += '<span class="chatimg">';
-        temp += '<img src="${txt3}" />';
+        temp += '<img src="${txt3}" alt="icon" />';
         temp += '</span>';
         temp += '<div class="chat-room-info">';
         temp += '<div class="chat-room-name">${txt4}</div>';
@@ -889,7 +888,7 @@
         str += '<td class="display-msg ${txt2}">';
         str += '<p class="display-msg-header"><span class="display-msg-header-username">${txt3}</span>&nbsp;&nbsp;';
         str += '<span class="display-msg-header-time" data-toggle="tooltip" data-placement="bottom" title="${txt6}">${txt4}</span></p>';
-        str += '<p class="display-msg-content">${txt5}</p>';
+        str += '<div class="display-msg-content">${txt5}</div>';
         str += '</td>';
         str += '</tr>';
         var temp = formatTxt(str, [
@@ -898,7 +897,7 @@
             selfClass[1],
             obj.name,
             obj.time,
-            formatMsg(obj.msg),
+            obj.msg,
             obj.datetime,
             obj.id,
             obj.username,
