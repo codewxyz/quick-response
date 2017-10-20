@@ -195,5 +195,6 @@ function initServer() {
                 logger('init global organization error', err);
             });
         }
-    });
+    })
+    .catch(logger);
 }

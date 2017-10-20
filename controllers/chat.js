@@ -177,6 +177,89 @@ exports.addRoomMembers = (req, res) => {
  * @param  {Response} res [description]
  * @return {Json}     [description]
  */
+exports.addPrivateRoom = (req, res) => {
+    if (!req.body) {        
+        return res.json({success: false, msg: 'no request param', data: []});
+    }
+    var user = auth.getUser(req);
+    var formParam = req.body;
+    //-------------validate data-----------------
+    var rg = new RegExp(/^[a-zA-Z0-9\_]{3,}$/i);
+    formParam.code = formParam.code.trim();
+    if (!rg.test(formParam.code)) {
+        return res.json({success: false, msg: 'Invalid code (min length is 3 characters, special characters are not allowed).'});            
+    }
+    if (0 == formParam.name.length || formParam.name.length > 50) {
+        return res.json({success: false, msg: 'Name is required and has maximum length of 50 charactrers.'});
+    }
+
+    //------------check & set default value-------------
+    if (formParam.org == '') {
+        formParam.org = models.orgs.defaultCode;
+    }
+    if (formParam.avatar == '') {
+        formParam.avatar = './images/room-public.png';
+    }
+    var room = {
+        code: global.system.shortid.generate(),
+        avatar: formParam.avatar,
+        org: formParam.org,
+        name: formParam.name
+    };
+
+    // var userList = req.body.users.split(', ').map((val) => {
+    //     return val.trim();
+    // }).filter((val) => {
+    //     return (val != '') && (val != user.username);
+    // });
+    // userList.push(user.username);
+
+    var commands = [
+        ['hmset', room.code, room],
+        ['sadd', models.lists.getKey(models.lists.keyGRoom, true), room.code],
+        ['sadd', models.lists.getKey(models.lists.getKeyOrgRoom(room.org), true), room.code]
+    ];
+
+    models.lists.mexists(models.lists.keyGRoom, room.code)
+    .then((hasRoom) => {//validate room code
+        if (hasRoom == 0) {
+            return models.lists.mexists(models.lists.keyGOrg, room.org);
+        } else {
+            return new promise(function(resolve, reject) {
+                reject({validate: false, msg: 'This code room '+room.code+' has been registered.'});
+            });
+        }
+    })
+    .then((hasOrg) => {//validate organization code
+        if (hasOrg == 1) {
+            return models.rooms.multi(commands);
+        } else {
+            return new promise(function(resolve, reject) {
+                reject({validate: false, msg: 'This organization '+room.org+' does not exist.'});
+            });
+        }
+    })
+    .then((createResult) => {
+        if ((createResult != null) && 
+            (createResult.length == commands.length)) {
+            //add user to this room
+            // addUsersToRoom(room, userList);
+            return res.json({success: true, msg: 'Created successfully.', data: room});
+        } else {
+            return res.json({success: false, msg: 'Failed to create room.'});
+        }
+    })
+    .catch((err) => {
+        logger(err);
+        return res.json({success: false, msg: 'Failed to create room.'});
+    });
+};
+/**
+ * create room in an organization
+ * @param  {Request} req [description]
+ * @param  {Response} res [description]
+ * @return {Json}     [description]
+ */
 exports.addRoom = (req, res) => {
     if (!req.body) {        
         return res.json({success: false, msg: 'no request param', data: []});

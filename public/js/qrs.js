@@ -9,7 +9,8 @@
     var g_socket = io('/', g_socketOpts);
     //connect current org channel
     var g_socketOrg = {
-        qrgb: io('/qrgb', g_socketOpts)
+        qrgb: io('/qrgb', g_socketOpts),
+        qrprivate: io('/qrprivate', g_socketOpts)
     };
 
     var g_roomEvents = {
@@ -365,10 +366,10 @@
             return;
         }
         var roomOpts = {
-            code: g_user.username+'-'+obj.username,
+            code: g_user.username+'_'+obj.username,
             avatar: obj.avatar,
             name: obj.name,
-            org: 'qrprivate'
+            org: 'qrgb'
         };
         //check if private room is existed on screen
         //swith to that room
@@ -376,14 +377,48 @@
             changeChatRoom(g_socket, roomOpts.code, $('#r-'+g_user.username+'-'+obj.username));
         } else if ($('#r-'+obj.username+'-'+g_user.username).length > 0) {
             changeChatRoom(g_socket, roomOpts.code, $('#r-'+obj.username+'-'+g_user.username));
+        } else {
+            //if room does not exist, create one
+            $.ajax({
+                url: 'main/aj/add-private-room',
+                type: 'post',
+                data: roomOpts,
+                dataType: 'json',
+                complete: function(xhr, status) {
+
+                    if (xhr.status == 403) {
+                        location.href = '/';
+                        return;
+                    }
+                    if (status == 'error') {
+                        $('#qr-alert .modal-body').html('Error creating private room.');
+                        $('#qr-alert').modal('show');
+                    }
+                    $('#qr-modal-room').modal('hide');
+                },
+                success: function(result, status, xhr) {
+
+                    if (result.success) {
+                        $('#qr-alert .modal-body').text(result.msg);
+                        displayNewRoom(result.data, true);
+                        notifyJoinRoom(result.data);
+                        $('#qr-alert').modal('show');
+                    } else {
+                        $('#qr-alert .modal-body').html(result.msg);
+                        $('#qr-alert').modal('show');
+                    }
+                }
+            });
         }
 
-        //if not, create new room to begin chat
-        var temp = getPrivateRoomTemplate(roomOpts);
 
-        var parseHtml = $.parseHTML($.trim(temp));
-        $('#collapse-chat-room-list').append(parseHtml);
-        changeChatRoom(g_socket, roomOpts.code, parseHtml);
+        //if not, create new room to begin chat
+        // displayNewRoom(roomOpts, true);
+        // var temp = getPrivateRoomTemplate(roomOpts);
+
+        // var parseHtml = $.parseHTML($.trim(temp));
+        // $('#collapse-chat-room-list').append(parseHtml);
+        // changeChatRoom(g_socket, roomOpts.code, parseHtml);
     }
 
     function showUserProfile(obj) {
@@ -777,10 +812,10 @@
         return temp;
     }
 
-    function displayNewRoom(room) {
-        var temp = getRoomTemplate(room);
+    function displayNewRoom(room, isPrivate=false) {
+        var temp = isPrivate ? getPrivateRoomTemplate(room) : getRoomTemplate(room);
         var parseHtml = $.parseHTML($.trim(temp));
-        $('#collapse-chat-room-list').append(parseHtml);
+        $('#r-'+g_worldRoom).after(parseHtml);
 
         //save chat content of this room
         g_chatContent[room.code] = '';
