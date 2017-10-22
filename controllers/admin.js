@@ -129,11 +129,14 @@ exports.getRooms = (req, res) => {
  * @return {Json}     [description]
  */
 exports.addUser = (req, res) => {
+    if (!req.body) {        
+        return res.json({success: false, msg: 'no request param', data: []});
+    }
     var formParam = req.body;
     //--------------validate user information-----------
-    formParam = formParam.map((val)=>{
-        return val.trim();
-    });
+    // formParam = formParam.map((val)=>{
+    //     return val.trim();
+    // });
     var rg = new RegExp(/^[a-zA-Z0-9\_]{3,}$/i);
     if (!rg.test(formParam.code)) {
         return res.json({success: false, msg: 'Invalid username (min length is 3 characters, special characters are not allowed).'});            

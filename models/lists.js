@@ -13,18 +13,15 @@ function ListsModel() {
     BaseModel.apply(this, ['lists', 'set']);
 
     this.getKeyOrgRoom = (org) => 'orgs:'+org+':rooms';
-    this.getKeyOrgPrivate = (org) => 'orgs:'+org+':privates';
     this.getKeyOrgUser = (org) => 'orgs:'+org+':users';
     this.getKeyOrgNUser = (org) => 'orgs:'+org+':non-users';
     this.getKeyRoomUser = (room) => 'rooms:'+room+':users';
     this.getKeyRoomNUser = (room) => 'rooms:'+room+':non-users';
     this.getKeyUserRoom = (username) => 'users:'+username+':rooms';
-    this.getKeyUserPrivate = (username) => 'users:'+username+':privates';
     this.getKeyUserOrg = (username) => 'users:'+username+':orgs';
     this.keyGUser = 'users:global';
     this.keyGOrg = 'orgs:global';
     this.keyGRoom = 'rooms:global';
-    this.keyGPrivate = 'privates:global';
 
     this.createOrgRoom = (room, callback) => {
     	var id = this.getKeyOrgRoom(room.org);

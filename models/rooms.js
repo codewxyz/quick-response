@@ -3,6 +3,7 @@
 // 	code: 'room', --primary key
 // 	name: 'World Room', 
 // 	org_code: 'w', 
+// 	type: 'public' (private)
 // 	created_at: '15012456',
 // 	created_by: 'userA',
 // 	updated_at: '15012456',
@@ -18,6 +19,7 @@ function RoomsModel() {
     BaseModel.apply(this, ['rooms']);
     this.reserved = ['global', 'room'];
     this.defaultCode = 'room';
+    this.types = ['private', 'public'];
 }
 
 g_util.inherits(RoomsModel, BaseModel);

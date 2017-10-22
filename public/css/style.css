@@ -85,7 +85,12 @@ body {
 .chat-room-status i {
     cursor: pointer;
 }
-
+.user-status-online {
+	color: green;
+}
+.user-status-offline {
+	color: red;
+}
 .chat-room-change-room {
     position: absolute;
     right: 0;
@@ -161,12 +166,26 @@ body {
 }
 
 .chatbody-loading {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    text-align: center;
+    /*display: none;*/
+}
+
+.chatbody-loading i {
+    position: absolute;
+    margin: auto;
+    top: 50%;
+}
+/*.chatbody-loading {
     width: 100%;
     height: 412px;
     background-color: lightgrey;
     text-align: center;
     line-height: 412px;
-}
+}*/
 
 @media max-width: 767px {
     .chatbody {

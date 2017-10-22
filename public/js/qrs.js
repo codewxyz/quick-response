@@ -9,8 +9,7 @@
     var g_socket = io('/', g_socketOpts);
     //connect current org channel
     var g_socketOrg = {
-        qrgb: io('/qrgb', g_socketOpts),
-        qrprivate: io('/qrprivate', g_socketOpts)
+        qrgb: io('/qrgb', g_socketOpts)
     };
 
     var g_roomEvents = {
@@ -21,7 +20,9 @@
     };
     var g_orgEvents = {
         join_room: 'user join room',
-        new_room: 'new room created'
+        new_room: 'new room created',
+        invite_chat: 'invite private chat',
+        is_invite_chat: 'is invited with private chat'
     };
     var g_socketClientEvents = {
         connect: 'connect',
@@ -297,7 +298,8 @@
             name: $('#fm-room-name').val(),
             avatar: $('#fm-room-avatar').val(),
             users: $('#fm-room-users').val(),
-            org: $('#fm-room-org').val()
+            org: $('#fm-room-org').val(),
+            type: 'public'
         };
         $.ajax({
             url: 'main/aj/add-room',
@@ -365,24 +367,29 @@
         if (g_user.username == obj.username) {
             return;
         }
-        var roomOpts = {
-            code: g_user.username+'_'+obj.username,
-            avatar: obj.avatar,
-            name: obj.name,
-            org: 'qrgb'
-        };
+
         //check if private room is existed on screen
         //swith to that room
-        if($('#r-'+g_user.username+'-'+obj.username).length > 0) {
-            changeChatRoom(g_socket, roomOpts.code, $('#r-'+g_user.username+'-'+obj.username));
-        } else if ($('#r-'+obj.username+'-'+g_user.username).length > 0) {
-            changeChatRoom(g_socket, roomOpts.code, $('#r-'+obj.username+'-'+g_user.username));
+        // var checkRoomCode = [
+        //     g_user.username+'-'+obj.username,
+        //     obj.username+'-'+g_user.username
+        // ];
+        console.log($('a[id^="r-"').filter('[data-targetuser="'+obj.username+'"]'));
+        if($('a[id^="r-"').filter('[data-targetuser="'+obj.username+'"]').length > 0) {
+            var e = $('a[id^="r-"').filter('[data-targetuser="'+obj.username+'"]');
+            changeChatRoom(g_socket, e.data('org'), e);
         } else {
             //if room does not exist, create one
+            var data = {
+                name: g_user.username+' and '+obj.username,
+                type: 'private',
+                targetUser: obj.username,
+                users: obj.username
+            };
             $.ajax({
-                url: 'main/aj/add-private-room',
+                url: 'main/aj/add-room',
                 type: 'post',
-                data: roomOpts,
+                data: data,
                 dataType: 'json',
                 complete: function(xhr, status) {
 
@@ -394,15 +401,12 @@
                         $('#qr-alert .modal-body').html('Error creating private room.');
                         $('#qr-alert').modal('show');
                     }
-                    $('#qr-modal-room').modal('hide');
                 },
                 success: function(result, status, xhr) {
 
                     if (result.success) {
-                        $('#qr-alert .modal-body').text(result.msg);
-                        displayNewRoom(result.data, true);
+                        displayNewRoom(result.data);
                         notifyJoinRoom(result.data);
-                        $('#qr-alert').modal('show');
                     } else {
                         $('#qr-alert .modal-body').html(result.msg);
                         $('#qr-alert').modal('show');
@@ -410,15 +414,6 @@
                 }
             });
         }
-
-
-        //if not, create new room to begin chat
-        // displayNewRoom(roomOpts, true);
-        // var temp = getPrivateRoomTemplate(roomOpts);
-
-        // var parseHtml = $.parseHTML($.trim(temp));
-        // $('#collapse-chat-room-list').append(parseHtml);
-        // changeChatRoom(g_socket, roomOpts.code, parseHtml);
     }
 
     function showUserProfile(obj) {
@@ -665,7 +660,7 @@
         loadNewChatContent(oldRoom);
         $('.chat-active').removeClass('chat-active');
         $(e).addClass('chat-active');
-        $('#r-' + g_curRoom).find('.chat-room-unread').html('');
+        $('#r-' + $.escapeSelector(g_curRoom)).find('.chat-room-unread').html('');
     }
 
     function setSocketEvents() {
@@ -689,7 +684,7 @@
             //custom org event
             g_socketOrg[i].on(g_orgEvents.new_room, (obj) => {
                 if ((g_user.username == obj.username) &&
-                    ($('#r-' + obj.room.code).length == 0)) {
+                    ($('#r-' + $.escapeSelector(obj.room.code)).length == 0)) {
                     displayNewRoom(obj.room);
                 }
             });
@@ -731,7 +726,22 @@
         });
 
         g_socket.on(g_roomEvents.count_online, function(msg) {
-            $('#r-' + msg.roomCode).find('.chat-room-online').html(msg.count);
+            var roomCode = '#'+$.escapeSelector('r-' + msg.roomCode);
+            var type = $(roomCode).data('rtype');
+
+            if (type == 'private') {
+                if (msg.count > 1) {
+                    $(roomCode).find('.chat-room-private-status').removeClass('user-status-offline');
+                    $(roomCode).find('.chat-room-private-status').addClass('user-status-online');
+                    $(roomCode).find('.chat-room-private-status').text('online');
+                } else {
+                    $(roomCode).find('.chat-room-private-status').removeClass('user-status-online');
+                    $(roomCode).find('.chat-room-private-status').addClass('user-status-offline');
+                    $(roomCode).find('.chat-room-private-status').text('offline');
+                }
+            } else {
+                $(roomCode).find('.chat-room-online').text(msg.count);
+            }
         });
 
         g_socket.on(g_socketClientEvents.connect_timeout, () => {
@@ -768,7 +778,7 @@
         temp += '<div class="chat-room-info">';
         temp += '<div class="chat-room-name">${txt4}</div>';
         temp += '<div class="chat-room-status">';
-        temp += 'Status: <span class="chat-room-private-status">checking...</span>&nbsp;&nbsp;';
+        temp += 'Status: <span class="chat-room-private-status user-status-online">checking...</span>&nbsp;&nbsp;';
         temp += '<span class="chat-room-unread badge"></span>';
         temp += '</div>';
         temp += '</div>';
@@ -812,8 +822,8 @@
         return temp;
     }
 
-    function displayNewRoom(room, isPrivate=false) {
-        var temp = isPrivate ? getPrivateRoomTemplate(room) : getRoomTemplate(room);
+    function displayNewRoom(room) {
+        var temp = room.type == 'private' ? getPrivateRoomTemplate(room) : getRoomTemplate(room);
         var parseHtml = $.parseHTML($.trim(temp));
         $('#r-'+g_worldRoom).after(parseHtml);
 
@@ -898,10 +908,12 @@
                 g_chatContent[roomCode] = temp;
             }
 
-            var unreadhHtml = $('#r-' + roomCode).find('.chat-room-unread').html();
-            $('#r-' + roomCode).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml) + 1);
+            var eRoomCode = '#r-' + $.escapeSelector(roomCode);
+            var unreadhHtml = $(eRoomCode).find('.chat-room-unread').html();
+
+            $(eRoomCode).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml) + 1);
             if (roomCode != g_worldRoom) {
-                var roomNode = $('#r-' + roomCode).detach();
+                var roomNode = $(eRoomCode).detach();
                 $('#r-'+g_worldRoom).after(roomNode);
             }
         }
@@ -1060,7 +1072,7 @@
         //store current chat room content
         g_chatContent[old] = $(g_selectorList.chat_container_inner).html();
         //get selected chat room content if exist & display
-        if (g_chatContent[g_curRoom] != null) {
+        if (g_chatContent[g_curRoom] != null && g_historyChatPage[g_curRoom] != 0) {
             $(g_selectorList.chat_container_inner).html(g_chatContent[g_curRoom]);
             $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
             setTimeout(() => {

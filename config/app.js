@@ -1,5 +1,7 @@
 // var winston = require('winston');
 // var winstonDailyRotateFile = require('winston-daily-rotate-file');
+var shortid = require('shortid');
+shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@$');
 
 exports.system = {
     app_mode: process.env.ENVIRONMENT,

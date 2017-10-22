@@ -6,7 +6,7 @@ var qrsModel = new (require('../models/QRSModel.js'))();
 exports.show = (req, res) => {
     var user = auth.getUser(req);
     var chatRooms = [];
-    var chats = [];
+    var privateRoomIdx = [];
 
     //get list chat room user can access
     models.lists.custom('smembers', models.lists.getKeyUserRoom(user.username))
@@ -22,13 +22,51 @@ exports.show = (req, res) => {
         }
     })
     .then((rooms) => {
+        var commands = [];
         for (var i in rooms) {
     		chatRooms.push(rooms[i]);
+            if (rooms[i].type == 'private') {
+                commands.push(['smembers', models.lists.getKeyRoomUser(rooms[i].code)]);
+                privateRoomIdx.push(i);
+            }
         }
+        if (commands.length > 0) {
+            return models.lists.batch(commands);
+        } else {
+            return new promise((resolve, reject) => resolve([]));
+        }
+
+        // return getLatestChat(models.rooms.defaultCode, 0);
+    })
+    .then((privateUsers) => {
+        if (privateUsers.length > 0) {
+            var commands = [];
+            privateUsers.forEach((val) => {
+                var pUsers = val.filter((val2) => {
+                    return val2 != user.username;
+                }).join('');
+                commands.push(['hgetall', pUsers]);
+            });
+            if (commands.length > 0) {
+                return models.users.batch(commands);
+            } else {
+                return new promise((resolve, reject) => resolve([]));
+            }
+
+        } else {
+            return new promise((resolve, reject) => resolve([]));
+        }
+    })
+    .then((users) => {
+        users.forEach((user, idx) => {
+            if (Object.keys(user).length > 0) {
+                chatRooms[privateRoomIdx[idx]].targetUser = user;
+            }
+        });
+
         return getLatestChat(models.rooms.defaultCode, 0);
     })
-    .then((results) => {
-        chats = results;
+    .then((chats) => {
         return res.render('chat_room.html', { user: user, rooms: chatRooms, chats: chats });
     })
     .catch((err) => {
@@ -177,89 +215,6 @@ exports.addRoomMembers = (req, res) => {
  * @param  {Response} res [description]
  * @return {Json}     [description]
  */
-exports.addPrivateRoom = (req, res) => {
-    if (!req.body) {        
-        return res.json({success: false, msg: 'no request param', data: []});
-    }
-    var user = auth.getUser(req);
-    var formParam = req.body;
-    //-------------validate data-----------------
-    var rg = new RegExp(/^[a-zA-Z0-9\_]{3,}$/i);
-    formParam.code = formParam.code.trim();
-    if (!rg.test(formParam.code)) {
-        return res.json({success: false, msg: 'Invalid code (min length is 3 characters, special characters are not allowed).'});            
-    }
-    if (0 == formParam.name.length || formParam.name.length > 50) {
-        return res.json({success: false, msg: 'Name is required and has maximum length of 50 charactrers.'});
-    }
-
-    //------------check & set default value-------------
-    if (formParam.org == '') {
-        formParam.org = models.orgs.defaultCode;
-    }
-    if (formParam.avatar == '') {
-        formParam.avatar = './images/room-public.png';
-    }
-    var room = {
-        code: global.system.shortid.generate(),
-        avatar: formParam.avatar,
-        org: formParam.org,
-        name: formParam.name
-    };
-
-    // var userList = req.body.users.split(', ').map((val) => {
-    //     return val.trim();
-    // }).filter((val) => {
-    //     return (val != '') && (val != user.username);
-    // });
-    // userList.push(user.username);
-
-    var commands = [
-        ['hmset', room.code, room],
-        ['sadd', models.lists.getKey(models.lists.keyGRoom, true), room.code],
-        ['sadd', models.lists.getKey(models.lists.getKeyOrgRoom(room.org), true), room.code]
-    ];
-
-    models.lists.mexists(models.lists.keyGRoom, room.code)
-    .then((hasRoom) => {//validate room code
-        if (hasRoom == 0) {
-            return models.lists.mexists(models.lists.keyGOrg, room.org);
-        } else {
-            return new promise(function(resolve, reject) {
-                reject({validate: false, msg: 'This code room '+room.code+' has been registered.'});
-            });
-        }
-    })
-    .then((hasOrg) => {//validate organization code
-        if (hasOrg == 1) {
-            return models.rooms.multi(commands);
-        } else {
-            return new promise(function(resolve, reject) {
-                reject({validate: false, msg: 'This organization '+room.org+' does not exist.'});
-            });
-        }
-    })
-    .then((createResult) => {
-        if ((createResult != null) && 
-            (createResult.length == commands.length)) {
-            //add user to this room
-            // addUsersToRoom(room, userList);
-            return res.json({success: true, msg: 'Created successfully.', data: room});
-        } else {
-            return res.json({success: false, msg: 'Failed to create room.'});
-        }
-    })
-    .catch((err) => {
-        logger(err);
-        return res.json({success: false, msg: 'Failed to create room.'});
-    });
-};
-/**
- * create room in an organization
- * @param  {Request} req [description]
- * @param  {Response} res [description]
- * @return {Json}     [description]
- */
 exports.addRoom = (req, res) => {
     if (!req.body) {        
         return res.json({success: false, msg: 'no request param', data: []});
@@ -267,22 +222,32 @@ exports.addRoom = (req, res) => {
     var user = auth.getUser(req);
     var formParam = req.body;
     //-------------validate data-----------------
-    if (0 == formParam.name.length || formParam.name.length > 50) {
+    if (formParam.name.length == undefined || 0 == formParam.name.length || formParam.name.length > 50) {
         return res.json({success: false, msg: 'Name is required and has maximum length of 50 charactrers.'});
+    }
+    var rg = new RegExp(/^[a-zA-Z0-9\_]{3,}$/i);
+    if (formParam.targetUser != undefined && !rg.test(formParam.targetUser)) {
+        return res.json({success: false, msg: 'Invalid username (min length is 3 characters, special characters are not allowed).'});            
+    }
+    if (models.rooms.types.indexOf(formParam.type) == -1) {
+        return res.json({success: false, msg: 'Invalid room type.'});            
     }
 
     //------------check & set default value-------------
-    if (formParam.org == '') {
-        formParam.org = models.orgs.defaultCode;
-    }
-    if (formParam.avatar == '') {
-        formParam.avatar = './images/room-public.png';
+    if (formParam.avatar == undefined || formParam.avatar == '') {
+        if (formParam.type == 'private') {
+            formParam.avatar = './images/room-private.png';
+        } else {
+            formParam.avatar = './images/room-public.png';
+        }
     }
     var room = {
         code: global.system.shortid.generate(),
         avatar: formParam.avatar,
-        org: formParam.org,
-        name: formParam.name
+        org: formParam.org == undefined || formParam.org == '' ? 
+                models.orgs.defaultCode : formParam.org,
+        name: formParam.name,
+        type: formParam.type
     };
 
     var userList = req.body.users.split(', ').map((val) => {

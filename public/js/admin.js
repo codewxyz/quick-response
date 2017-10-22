@@ -99,7 +99,10 @@
         str += 'data-code="${txt4}"><i class="fa fa-pencil"></i></button></p>';
         str += '</td>';
         str += '</tr';
-        var temp = formatTxt(str, [user.avatar, user.role, user.username, user.username]);
+        var temp = formatTxt(
+            str, 
+            [user.avatar, user.username, user.role, user.username]
+        );
 
         $('.chatbody table tbody').append(temp);
     }

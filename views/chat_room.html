@@ -70,7 +70,7 @@
         </button>
         <div class="collapse in" id="collapse-chat-room-list">
             <a href="javascript:void(0)" class="chat-room chat-active" id="r-room"
-             data-room="room" data-org="W">
+             data-room="room" data-org="W" data-rtype="public">
                 <span class="chatimg">
                     <img src="./images/room-public.png" alt="chat-room-icon" />
                 </span>
@@ -86,11 +86,17 @@
             </a>
             {% for room in rooms %}
             <a href="javascript:void(0)" class="chat-room" id="r-{{ room.code }}"
-             data-room="{{ room.code }}" data-org="{{ room.org }}">
+             data-room="{{ room.code }}" data-org="{{ room.org }}" data-rtype="{{ room.type }}" 
+             data-targetuser="{{ room.targetUser.username }}">
                 <span class="chatimg">
+                    {% if(room.type == 'public') %}
                     <img src="{{ room.avatar }}" alt="chat-room-icon" />
+                    {% else %}
+                    <img src="{{ room.targetUser.avatar }}" alt="chat-room-icon" />
+                    {% endif %}
                 </span>
                 <div class="chat-room-info">
+                    {% if(room.type == 'public') %}
                     <div class="chat-room-name">{{ room.name }}</div>
                     <div class="chat-room-status">
                         Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
@@ -98,6 +104,13 @@
                         <i class="fa fa-user-plus chat-room-add-member" title="add members"></i>&nbsp;&nbsp;
                         <span class="chat-room-unread badge"></span>
                     </div>
+                    {% else %}
+                    <div class="chat-room-name">{{ room.targetUser.name }}</div>
+                    <div class="chat-room-status">
+                        Status: <span class="chat-room-private-status user-status-online">checking...</span>&nbsp;&nbsp;
+                        <span class="chat-room-unread badge"></span>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="chat-room-change-room"></div>
             </a>

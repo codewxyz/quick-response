@@ -25,7 +25,6 @@ module.exports = (app) => {
 	app.get('/main/aj/user-profile', chatController.getUserProfile);
 	app.get('/main/aj/user-search', chatController.searchUser);
 	app.post('/main/aj/add-room', chatController.addRoom);
-	app.post('/main/aj/add-private-room', chatController.addPrivateRoom);
 	app.post('/main/aj/add-members', chatController.addRoomMembers);
 	app.post('/main/aj/room-members', chatController.getRoomMembers);
 	app.post('/main/aj/chat-latest', chatController.getChatLatest);

@@ -39,6 +39,7 @@ global.models = {
     rooms: new (require('./models/rooms.js'))(),
     orgs: new (require('./models/organizations.js'))(),
     chats: new (require('./models/chats.js'))(),
+    privates: new (require('./models/privates.js'))(),
     lists: new (require('./models/lists.js'))()
 };
 
