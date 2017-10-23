@@ -108,6 +108,7 @@
             $(this).data('chatid', eId);
             $(this).data('name', eName);
             $(this).data('avatar', eAvatar);
+            $(this).data('popoverid', $(contentE).attr('aria-describedby'));
         });
 
         $('body').one('click', function () {
@@ -370,14 +371,11 @@
 
         //check if private room is existed on screen
         //swith to that room
-        // var checkRoomCode = [
-        //     g_user.username+'-'+obj.username,
-        //     obj.username+'-'+g_user.username
-        // ];
-        console.log($('a[id^="r-"').filter('[data-targetuser="'+obj.username+'"]'));
-        if($('a[id^="r-"').filter('[data-targetuser="'+obj.username+'"]').length > 0) {
-            var e = $('a[id^="r-"').filter('[data-targetuser="'+obj.username+'"]');
-            changeChatRoom(g_socket, e.data('org'), e);
+        var findNode = $('a[id^="r-"').filter('[data-targetuser="'+obj.username+'"]');
+        if(findNode.length > 0) {
+            if (!findNode.hasClass('chat-active')) {
+                changeChatRoom(findNode.data('org'), findNode.data('room'), findNode);
+            }
         } else {
             //if room does not exist, create one
             var data = {
@@ -683,6 +681,8 @@
 
             //custom org event
             g_socketOrg[i].on(g_orgEvents.new_room, (obj) => {
+                console.log('new room');
+                console.log(obj);
                 if ((g_user.username == obj.username) &&
                     ($('#r-' + $.escapeSelector(obj.room.code)).length == 0)) {
                     displayNewRoom(obj.room);
@@ -771,7 +771,7 @@
     function getPrivateRoomTemplate(room) {
         var temp = '';
         temp += '<a href="javascript:void(0)" class="chat-room" id="r-${txt0}"';
-        temp += 'data-room="${txt1}" data-org="${txt2}">';
+        temp += 'data-room="${txt1}" data-org="${txt2}" data-rtype="${txt5}" data-targetuser="${txt6}">';
         temp += '<span class="chatimg">';
         temp += '<img src="${txt3}" alt="icon" />';
         temp += '</span>';
@@ -788,8 +788,10 @@
             room.code,
             room.code,
             room.org,
-            room.avatar,
-            room.name
+            room.targetUser.avatar,
+            room.targetUser.name,
+            room.type,
+            room.targetUser.username
         ]);
         return temp;
     }
@@ -797,7 +799,7 @@
     function getRoomTemplate(room) {
         var temp = '';
         temp += '<a href="javascript:void(0)" class="chat-room" id="r-${txt0}"';
-        temp += 'data-room="${txt1}" data-org="${txt2}">';
+        temp += 'data-room="${txt1}" data-org="${txt2}" data-rtype="${txt5}" data-targetuser="">';
         temp += '<span class="chatimg">';
         temp += '<img src="${txt3}" />';
         temp += '</span>';
@@ -817,7 +819,9 @@
             room.code,
             room.org,
             room.avatar,
-            room.name
+            room.name,
+            room.type
+
         ]);
         return temp;
     }

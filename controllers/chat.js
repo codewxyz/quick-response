@@ -257,15 +257,10 @@ exports.addRoom = (req, res) => {
     });
     userList.push(user.username);
 
-    var commands = [
-        ['hmset', room.code, room],
-        ['sadd', models.lists.getKey(models.lists.keyGRoom, true), room.code],
-        ['sadd', models.lists.getKey(models.lists.getKeyOrgRoom(room.org), true), room.code]
-    ];
-
-    models.lists.mexists(models.lists.keyGRoom, room.code)
-    .then((hasRoom) => {//validate room code
+    models.lists.mexists(models.lists.keyGRoom, room.code)//validate room code
+    .then((hasRoom) => {
         if (hasRoom == 0) {
+            //validate organization code
             return models.lists.mexists(models.lists.keyGOrg, room.org);
         } else {
             return new promise(function(resolve, reject) {
@@ -273,8 +268,17 @@ exports.addRoom = (req, res) => {
             });
         }
     })
-    .then((hasOrg) => {//validate organization code
+    .then((hasOrg) => {
         if (hasOrg == 1) {
+            var commands = [
+                ['hmset', room.code, room],
+                ['sadd', models.lists.getKey(models.lists.keyGRoom, true), room.code],
+                ['sadd', models.lists.getKey(models.lists.getKeyOrgRoom(room.org), true), room.code]
+            ];
+            if (formParam.type == 'private') {
+                commands.push(['hgetall', models.users.getKey(formParam.targetUser, true)]);
+            }
+            //run db query
             return models.rooms.multi(commands);
         } else {
             return new promise(function(resolve, reject) {
@@ -283,10 +287,14 @@ exports.addRoom = (req, res) => {
         }
     })
     .then((createResult) => {
-        if ((createResult != null) && 
-            (createResult.length == commands.length)) {
+        if (createResult[0] == 'OK') {
             //add user to this room
             addUsersToRoom(room, userList);
+            if (formParam.type == 'private') {
+                var getTU = createResult.pop();
+                delete getTU.password;
+                room.targetUser = getTU;
+            }
             return res.json({success: true, msg: 'Created successfully.', data: room});
         } else {
             return res.json({success: false, msg: 'Failed to create room.'});
