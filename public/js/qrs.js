@@ -112,7 +112,11 @@
         });
 
         $('body').one('click', function () {
-            $(contentE).popover('destroy');
+            if ($(contentE).parents().is('body')) {
+                $(contentE).popover('destroy');
+            } else {
+                $('#'+$(contentE).attr('aria-describedby')).fadeOut(0);
+            }
         });
     });
 
@@ -134,8 +138,6 @@
                 getQuote(uObj);
                 break;
             case 'private-chat':
-                $('body').click();
-                $('a[aria-describedby='+popoverid+']').removeAttr('aria-describedby');
                 initPrivateChat(uObj);
                 break;
             default:
@@ -145,7 +147,21 @@
 
     $('body').on('click', '.has-popover', function (e) {
         var contentE = e.currentTarget;
+        var shouldShow = false;
         if ($(contentE).attr('aria-describedby') == undefined) {
+            shouldShow = true;
+        } else {
+            if ($('#'+$(contentE).attr('aria-describedby')).length == 0) {
+                $(contentE).removeAttr('aria-describedby');
+                shouldShow = true;
+            } else if ($('#'+$(contentE).attr('aria-describedby')).css('display') == 'none') {
+                $(contentE).removeAttr('aria-describedby');
+                $('#'+$(contentE).attr('aria-describedby')).remove();
+                shouldShow = true;
+            }
+        }
+
+        if (shouldShow) {
             $(contentE).popover({
                 container: 'body',
                 placement: 'right',
@@ -348,10 +364,13 @@
     });
 
     $('.chat-room-list').on('click', '.chat-room-change-room', function() {
+        console.log('room clicked');
         var parent = $(this).parent();
-        var getNs = $(parent).data('org');
-        var getRoom = $(parent).data('room');
-        changeChatRoom(getNs, getRoom, parent);
+        if (!parent.hasClass('chat-active')) {
+            var getNs = parent.data('org');
+            var getRoom = parent.data('room');
+            changeChatRoom(parent);
+        }
     });
 
     $('.chat-room-list').on('click', '.chat-room-list-member', function() {
@@ -374,7 +393,11 @@
         var findNode = $('a[id^="r-"').filter('[data-targetuser="'+obj.username+'"]');
         if(findNode.length > 0) {
             if (!findNode.hasClass('chat-active')) {
-                changeChatRoom(findNode.data('org'), findNode.data('room'), findNode);
+                changeChatRoom(findNode);
+                if (findNode.data('room') != g_worldRoom) {
+                    var roomNode = $(findNode).detach();
+                    $('#r-'+g_worldRoom).after(roomNode);
+                }
             }
         } else {
             //if room does not exist, create one
@@ -645,8 +668,10 @@
         });
     }
 
-    function changeChatRoom(getNs, getRoomCode, e) {
+    function changeChatRoom(e) {
         var oldRoom = g_curRoom;
+        var getNs = $(e).data('org');
+        var getRoomCode = $(e).data('room');
 
         if (getNs == 'W') {
             g_curRoom = g_worldRoom;
@@ -836,7 +861,7 @@
         g_historyChatPage[room.code] = -1;
 
         //change seleted room to this room
-        changeChatRoom(room.org, room.code, parseHtml);
+        changeChatRoom(parseHtml);
     }
 
 

@@ -60,16 +60,21 @@
 		var deviceHeight = $(window).height();
 		var deviceWidth = $(window).width();
 
-		var chatBodyHeight = deviceHeight-headerHeight-70-20-20;
+		//20px margin bottom of message input
+		var mainContentHeight = deviceHeight-headerHeight-20;
+		//70px message input + 20px margin top input 
+		var chatBodyHeight = mainContentHeight-70-20;
 		//mobile device support
 		//chat room show/hide
 		if (deviceWidth < 768) {
 			$('#collapse-chat-room-list-btn').removeClass('hidden');
 			$('#collapse-chat-room-list').removeClass('in');
+			//40px room list action buttons
 			chatBodyHeight -= 40;
 		} else {
 			$('#collapse-chat-room-list-btn').addClass('hidden');
 			$('#collapse-chat-room-list').addClass('in');
+			$('#collapse-chat-room-list').css('height', mainContentHeight-40);
 		}
 		//70px nav  + 20px margin
 		//20px margin after chatbody

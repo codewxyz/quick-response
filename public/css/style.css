@@ -16,10 +16,10 @@ body {
     position: relative;
 }
 
-.chat-room-list {
-    /*height: 450px;*/
+#collapse-chat-room-list {
+    height: 350px;
     overflow: auto;
-    /*border-bottom: 3px solid #99ccff;*/
+    overflow-x: hidden;
 }
 
 .chat-room {
