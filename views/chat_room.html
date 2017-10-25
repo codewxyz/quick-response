@@ -89,10 +89,10 @@
              data-room="{{ room.code }}" data-org="{{ room.org }}" data-rtype="{{ room.type }}" 
              data-targetuser="{{ room.targetUser.username }}">
                 <span class="chatimg">
-                    {% if(room.type == 'public') %}
-                    <img src="{{ room.avatar }}" alt="chat-room-icon" />
-                    {% else %}
+                    {% if(room.type == 'private') %}
                     <img src="{{ room.targetUser.avatar }}" alt="chat-room-icon" />
+                    {% else %}
+                    <img src="{{ room.avatar }}" alt="chat-room-icon" />
                     {% endif %}
                 </span>
                 <div class="chat-room-info">
