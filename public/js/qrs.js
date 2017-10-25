@@ -3,8 +3,7 @@
     var g_socketOpts = {
         path: '/qrchat',
         reconnectionAttempts: 5,
-        transports: ['websocket'],
-        upgrade: false
+        transports: ['websocket']
     };
     var g_socket = io('/', g_socketOpts);
     //connect current org channel
@@ -428,6 +427,10 @@
                     if (result.success) {
                         displayNewRoom(result.data);
                         notifyJoinRoom(result.data);
+                        insertChatStatus({
+                            roomCode: result.data.code, 
+                            msg: 'You started a private chat with '++obj.username'. Start your chat now...'
+                        });
                     } else {
                         $('#qr-alert .modal-body').html(result.msg);
                         $('#qr-alert').modal('show');
@@ -711,6 +714,12 @@
                 if ((g_user.username == obj.username) &&
                     ($('#r-' + $.escapeSelector(obj.room.code)).length == 0)) {
                     displayNewRoom(obj.room);
+                    if (obj.room.type == 'private') {
+                        insertChatStatus({
+                            roomCode: obj.room.code, 
+                            msg: obj.room.username+' want to start a private chat with you. Start your chat now...'
+                        });
+                    }
                 }
             });
 
@@ -1008,6 +1017,12 @@
             setTimeout(() => {
                 g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
             }, 1020);
+        } else {
+            if (g_chatContent[roomCode] != undefined) {
+                g_chatContent[roomCode] += temp;
+            } else {
+                g_chatContent[roomCode] = temp;
+            }
         }
     }
 
