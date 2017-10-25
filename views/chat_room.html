@@ -96,18 +96,18 @@
                     {% endif %}
                 </span>
                 <div class="chat-room-info">
-                    {% if(room.type == 'public') %}
+                    {% if(room.type == 'private') %}
+                    <div class="chat-room-name">{{ room.targetUser.name }}</div>
+                    <div class="chat-room-status">
+                        Status: <span class="chat-room-private-status user-status-online">checking...</span>&nbsp;&nbsp;
+                        <span class="chat-room-unread badge"></span>
+                    </div>
+                    {% else %}
                     <div class="chat-room-name">{{ room.name }}</div>
                     <div class="chat-room-status">
                         Online: <span class="chat-room-online">0</span>&nbsp;&nbsp;
                         <i class="fa fa-users chat-room-list-member" title="view member list"></i>&nbsp;&nbsp;
                         <i class="fa fa-user-plus chat-room-add-member" title="add members"></i>&nbsp;&nbsp;
-                        <span class="chat-room-unread badge"></span>
-                    </div>
-                    {% else %}
-                    <div class="chat-room-name">{{ room.targetUser.name }}</div>
-                    <div class="chat-room-status">
-                        Status: <span class="chat-room-private-status user-status-online">checking...</span>&nbsp;&nbsp;
                         <span class="chat-room-unread badge"></span>
                     </div>
                     {% endif %}
