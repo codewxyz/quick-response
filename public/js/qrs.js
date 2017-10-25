@@ -429,7 +429,7 @@
                         notifyJoinRoom(result.data);
                         insertChatStatus({
                             roomCode: result.data.code, 
-                            msg: 'You started a private chat with '++obj.username'. Start your chat now...'
+                            msg: 'You started a private chat with '+obj.username+'. Start your chat now...'
                         });
                     } else {
                         $('#qr-alert .modal-body').html(result.msg);

@@ -75,6 +75,7 @@
 			$('#collapse-chat-room-list-btn').addClass('hidden');
 			$('#collapse-chat-room-list').addClass('in');
 			$('#collapse-chat-room-list').css('height', mainContentHeight-40);
+			// $('#collapse-chat-room-list').css('width', $('#chat-room-list').outerWidth());
 		}
 		//70px nav  + 20px margin
 		//20px margin after chatbody
