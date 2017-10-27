@@ -134,18 +134,6 @@ body {
     border: 2px solid lightseagreen;
 }
 
-.my-msg .display-msg-header-username {
-    color: cadetblue;
-}
-
-.display-msg-header-username {
-    font-weight: bold;
-}
-
-.display-msg-header-time {
-    font-size: 0.8em;
-}
-
 .chatbody {
     padding: 15px;
     margin-bottom: 20px;
@@ -231,6 +219,20 @@ body {
     font-size: 0.9em;
     color: #808080;
     padding-left: 10px;
+}
+.my-msg .display-msg-header-username {
+    color: cadetblue;
+}
+
+.display-msg-header-username {
+    font-weight: bold;
+}
+
+.display-msg-header-time {
+    font-size: 0.8em;
+}
+.display-msg-content-deleted {
+    color: gray;    
 }
 
 #popover-user-actions {

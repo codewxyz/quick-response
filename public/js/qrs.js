@@ -91,16 +91,24 @@
         var eName = $(contentE).data('name');
         var eAvatar = $(contentE).data('avatar');
         var eId = $(contentE).data('chatid');
+        var itemUserArr = ['delete', 'edit'];
 
         $('#'+$(contentE).attr('aria-describedby'))
         .find('.list-group-item')
         .each(function (e) {
-
-            if ( ($(this).data('action') == 'private-chat') && 
-                (g_user.username == eUsername)) {
-                $(this).addClass('disabled');
-                $(this).prop('disabled', true);
-                return;
+            var actionCode = $(this).data('action');
+            if (g_user.username == eUsername) {
+                if (actionCode == 'private-chat') {                    
+                    $(this).addClass('disabled');
+                    $(this).prop('disabled', true);
+                    return;
+                }
+            } else {
+                if (itemUserArr.indexOf(actionCode) > -1) {                  
+                    $(this).addClass('disabled');
+                    $(this).prop('disabled', true);
+                    return;
+                }
             }
 
             $(this).data('username', eUsername);
@@ -135,6 +143,12 @@
                 break;
             case 'quote':
                 getQuote(uObj);
+                break;
+            case 'edit':
+                editMsg(uObj);
+                break;
+            case 'delete':
+                confirmDeleteMsg(uObj);
                 break;
             case 'private-chat':
                 initPrivateChat(uObj);
@@ -363,7 +377,6 @@
     });
 
     $('.chat-room-list').on('click', '.chat-room-change-room', function() {
-        console.log('room clicked');
         var parent = $(this).parent();
         if (!parent.hasClass('chat-active')) {
             var getNs = parent.data('org');
@@ -380,6 +393,52 @@
         };
         getMemberList(data);
     });
+
+    $('body').on('click', '.btn-alert-confirm-ok', function () {
+        var data = {
+            chatid: $(this).data('chatid')
+        };
+        $.ajax({
+            url: 'main/aj/delete-msg',
+            type: 'post',
+            data: data,
+            dataType: 'json',
+            complete: function(xhr, status) {
+
+                if (xhr.status == 403) {
+                    location.href = '/';
+                    return;
+                }
+                if (status == 'error') {
+                    $('#qr-alert .modal-body').html('Error delete message.');
+                    $('#qr-alert').modal('show');
+                }
+            },
+            success: function(result, status, xhr) {
+                if (result.success) {
+                    $('#msg-'+data.chatid).find('.display-msg-content').addClass('display-msg-content-deleted');
+                    $('#msg-'+data.chatid).find('.display-msg-content').html(
+                        '<i class="fa fa-times-circle text-danger"></i>This message has been deleted.'
+                    );
+                } else {
+                    $('#qr-alert .modal-body').html(result.msg);
+                    $('#qr-alert').modal('show');
+                }
+            }
+        });
+    });
+
+    function confirmDeleteMsg(obj) {
+        //user can only delete their own message
+        if (g_user.username != obj.username) {
+            return;
+        }
+        $('#qr-alert-confirm .modal-body').html('Do you want to delete this message permenantly?');
+        $('#qr-alert-confirm .btn-alert-confirm-ok').addClass('btn-alert-confirm-deletemsg');
+        $('#qr-alert-confirm .btn-alert-confirm-ok').data('chatid', obj.chatid);
+        $('#qr-alert-confirm').modal('show');
+
+    }
 
     function initPrivateChat(obj) {
         //user cannot private himself
@@ -429,7 +488,7 @@
                         notifyJoinRoom(result.data);
                         insertChatStatus({
                             roomCode: result.data.code, 
-                            msg: 'You started a private chat with '+obj.username+'. Start your chat now...'
+                            msg: 'You started a private chat with '+result.data.targetUser.name+'. Start your chat now...'
                         });
                     } else {
                         $('#qr-alert .modal-body').html(result.msg);
@@ -710,14 +769,13 @@
             //custom org event
             g_socketOrg[i].on(g_orgEvents.new_room, (obj) => {
                 console.log('new room');
-                console.log(obj);
                 if ((g_user.username == obj.username) &&
                     ($('#r-' + $.escapeSelector(obj.room.code)).length == 0)) {
                     displayNewRoom(obj.room);
                     if (obj.room.type == 'private') {
                         insertChatStatus({
                             roomCode: obj.room.code, 
-                            msg: obj.room.username+' want to start a private chat with you. Start your chat now...'
+                            msg: obj.room.targetUser.name+' want to start a private chat with you. Start your chat now...'
                         });
                     }
                 }
@@ -959,9 +1017,14 @@
 
     function getDisplayMessageTemplate(obj) {
         roomCode = obj.roomCode;
-        var selfClass = '';
+        var selfClass = ['',''];
+        var msgStatusClass = '';
         if (g_user.username == obj.username) {
             selfClass = ['my-avatar', 'my-msg'];
+        }
+        if (obj.msg == '') {
+            obj.msg = '<i class="fa fa-times-circle text-danger"></i>This message has been deleted.';
+            msgStatusClass = 'display-msg-content-deleted';
         }
         var str = "";
         str += '<tr id="msg-${txt10}">';
@@ -973,7 +1036,7 @@
         str += '<td class="display-msg ${txt2}">';
         str += '<p class="display-msg-header"><span class="display-msg-header-username">${txt3}</span>&nbsp;&nbsp;';
         str += '<span class="display-msg-header-time" data-toggle="tooltip" data-placement="bottom" title="${txt6}">${txt4}</span></p>';
-        str += '<div class="display-msg-content">${txt5}</div>';
+        str += '<div class="display-msg-content ${txt10}">${txt5}</div>';
         str += '</td>';
         str += '</tr>';
         var temp = formatTxt(str, [
@@ -987,7 +1050,8 @@
             obj.id,
             obj.username,
             obj.name,
-            obj.id
+            obj.id,
+            msgStatusClass
         ]);
         return temp;
     }
@@ -1002,7 +1066,7 @@
         var str = "";
         str += '<tr>';
         str += '<td style="text-align: center;" colspan="2">';
-        str += '<span style="color:gray; font-size: 0.8em;">${txt0}</span>';
+        str += '<span style="color:gray; font-size: 0.9em;">${txt0}</span>';
         str += '</td>';
         str += '</tr>';
         var temp = formatTxt(str, [
