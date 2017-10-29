@@ -37,9 +37,13 @@ function BaseModel() {
     this.custom = function() {
         var args = Array.from(arguments);
         var command = arguments[0];
-        var key = getKey(arguments[1]);
-        var passArgs = [key].concat(args.slice(2));
-
+        var passArgs = [];
+        if (command == 'eval') {
+            passArgs = args.slice(1);
+        } else {
+            var key = getKey(arguments[1]);
+            passArgs = [key].concat(args.slice(2));
+        }
         return g_db[command+'Async'](...passArgs);
     };
 

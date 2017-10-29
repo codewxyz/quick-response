@@ -15,7 +15,7 @@ exports.system = {
 };
 
 exports.common = {
-    shortid: require('shortid'),
+    shortid: shortid,
     moment: require('moment'),
     momentz: require('moment-timezone'),
     promise: require("bluebird")

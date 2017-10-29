@@ -135,7 +135,13 @@
                     <p class="display-msg-header"><span class="display-msg-header-username">{{ chat.name }}</span>&nbsp;&nbsp;
                     <span class="display-msg-header-time" data-toggle="tooltip" data-placement="bottom" 
                         title="{{ chat.time }}">{{ chat.time }}</span></p>
+                    {% if (chat.msg == '') %}
+                    <p class="display-msg-content display-msg-content-deleted">
+                        <i class="fa fa-times-circle text-danger"></i> This message has been deleted.
+                    </p>
+                    {% else %}
                     <p class="display-msg-content" data-remsg="{{ chat.msg }}">{{ chat.msg }}</p>
+                    {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -164,7 +170,7 @@
 <div id="popover-user-actions">
     <div class="list-group">
         <button type="button" class="popover-user-actions-item list-group-item" data-action="profile">User Profile</button>
-        <button type="button" class="popover-user-actions-item list-group-item" data-action="edit">Edit</button>
+        <!-- <button type="button" class="popover-user-actions-item list-group-item" data-action="edit">Edit</button> -->
         <button type="button" class="popover-user-actions-item list-group-item" data-action="delete">Delete</button>
         <button type="button" class="popover-user-actions-item list-group-item" data-action="quote">Quote</button>
         <button type="button" class="popover-user-actions-item list-group-item" data-action="private-chat">Private Chat</button>

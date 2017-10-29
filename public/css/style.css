@@ -117,7 +117,7 @@ body {
 }
 
 .avatar {
-    width: 35px;
+    width: 51px;
 }
 .avatar a {
     cursor: pointer;
@@ -143,6 +143,11 @@ body {
     overflow: auto;
     box-sizing: border-box;
     overflow-x: hidden;
+}
+
+.chatbody tr {
+    width: 100%;
+    display: flex;
 }
 
 .chatbody-overlay {

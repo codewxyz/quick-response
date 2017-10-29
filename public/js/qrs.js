@@ -188,7 +188,9 @@
 
     //reload first messages
     $('.display-msg-content').each(function() {
-        $(this).html(formatMsg($(this).data('remsg')));
+        if ($(this).data('remsg') != undefined) {
+            $(this).html(formatMsg($(this).data('remsg')));
+        }
     });
 
     //first auto scroll if chat section is long
@@ -396,7 +398,8 @@
 
     $('body').on('click', '.btn-alert-confirm-ok', function () {
         var data = {
-            chatid: $(this).data('chatid')
+            chatid: $(this).data('chatid'),
+            roomCode: g_curRoom
         };
         $.ajax({
             url: 'main/aj/delete-msg',
@@ -418,7 +421,7 @@
                 if (result.success) {
                     $('#msg-'+data.chatid).find('.display-msg-content').addClass('display-msg-content-deleted');
                     $('#msg-'+data.chatid).find('.display-msg-content').html(
-                        '<i class="fa fa-times-circle text-danger"></i>This message has been deleted.'
+                        '<i class="fa fa-times-circle text-danger"></i> This message has been deleted.'
                     );
                 } else {
                     $('#qr-alert .modal-body').html(result.msg);
@@ -763,7 +766,9 @@
                 insertChat(msg);
             });
             g_socketOrg[i].on(g_roomEvents.message_failed, function(msg) {
-                insertChatStatus(msg);
+                if (msg.username == g_user.username) {
+                    insertChatStatus(msg);
+                }
             });
 
             //custom org event
@@ -814,7 +819,9 @@
             insertChat(msg);
         });
         g_socket.on(g_roomEvents.message_failed, function(msg) {
-            insertChatStatus(msg);
+            if (msg.username == g_user.username) {
+                insertChatStatus(msg);
+            }
         });
 
         g_socket.on(g_roomEvents.count_online, function(msg) {
@@ -1023,7 +1030,7 @@
             selfClass = ['my-avatar', 'my-msg'];
         }
         if (obj.msg == '') {
-            obj.msg = '<i class="fa fa-times-circle text-danger"></i>This message has been deleted.';
+            obj.msg = '<i class="fa fa-times-circle text-danger"></i> This message has been deleted.';
             msgStatusClass = 'display-msg-content-deleted';
         }
         var str = "";
@@ -1065,7 +1072,7 @@
         roomCode = obj.roomCode;
         var str = "";
         str += '<tr>';
-        str += '<td style="text-align: center;" colspan="2">';
+        str += '<td style="text-align: center; flex-grow: 2;" colspan="2">';
         str += '<span style="color:gray; font-size: 0.9em;">${txt0}</span>';
         str += '</td>';
         str += '</tr>';

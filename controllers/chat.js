@@ -2,6 +2,7 @@ var auth = global.auth;
 var models = global.models;
 var logger = global.qrLog;
 var qrsModel = new (require('../models/QRSModel.js'))();
+var g_promise = global.common.promise;
 
 exports.show = (req, res) => {
     var user = auth.getUser(req);
@@ -75,6 +76,36 @@ exports.show = (req, res) => {
     });
 };
 
+exports.deleteMessage = (req, res) => {
+
+    if (!req.body) {        
+        return res.json({success: false, msg: 'There are no request parameters.', data: []});
+    }
+    var chatid = req.body.chatid;
+    var roomCode = req.body.roomCode;
+    var user = auth.getUser(req);
+
+    models.chats.exists(roomCode)
+    .then((hasRoom) => {
+        if (hasRoom == 1) {
+            //get chat detail from id
+            return models.chats.deleteChat(roomCode, chatid, user.username);
+        } else {
+            return new g_promise((resolve, reject) => reject('Room '+roomCode+' does not exist.'));
+        }
+    })
+    .then((results) => {
+        return res.json({success: true, msg: 'Message deleted.', data: []});
+    })
+    .catch((err) => {
+        logger(err);
+        return res.json({success: false, msg: 'Cannot delete message.', data: []});
+    });
+};
+
+exports.editMessage = (req, res) => {
+
+};
 exports.checkSession = (req, res) => {
     if (Object.keys(auth.getUser(req)).length > 0) {
         return res.json({success: true});

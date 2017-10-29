@@ -10,38 +10,95 @@ var g_util = require('util');
 var logger = global.qrLog;
 var g_moment = global.common.moment;
 var g_momentz = global.common.momentz;
+var g_promise = global.common.promise;
 
 function ChatsModel() {
     BaseModel.apply(this, ['chats', 'sorted_set']);
 	g_userModel = new (require('./users.js'))();
 
-    this.saveChat = (roomCode, data) => {
-    	//use time send to make message unique in redis
+    this.saveChat = (roomCode, data, isNew=true) => {
+    	//use timestamp for score
     	data.time = g_moment.utc().valueOf();
-        return this.custom('zadd', roomCode, [data.time, JSON.stringify(data)]);
+    	//script to run query
+    	var dbScript = '';
+    	dbScript += "local last_mem = redis.call('zrevrangebyscore', ARGV[1], '+inf', '-inf', 'withscores', 'limit', 0, 1) ";
+    	dbScript += "if ((last_mem[3] == nil) and (last_mem[2] ~= nil)) ";
+    	dbScript += "then local add_mem = redis.call('zadd', ARGV[1], 'NX', last_mem[2]+1, ARGV[2]) ";
+    	dbScript += "if (add_mem == 1) then return last_mem[2]+1 else return 0 end ";
+    	dbScript += "else return 0 end";
+
+    	return this.custom('eval', dbScript, 2, 'keyroom', 'chatdata', this.getKey(roomCode, true), JSON.stringify(data))
+    	.then((result) => {
+    		if (result > 0) {
+        		return new g_promise((resolve, reject) => resolve(result));
+    		} else {
+    			return new g_promise((resolve, reject) => reject('Cannot save chat data.'));
+    		}
+    	})
+    	.catch((err) => {
+			return new g_promise((resolve, reject) => reject(err));
+    	});
+    };
+
+    this.deleteChat = function (roomCode, chatid, username) {
+
+    	return this.custom('zrevrangebyscore', roomCode, chatid, chatid)//get chat details
+    	.then((chats) => {
+    		if (chats.length == 1) {
+		    	var chatDetails = JSON.parse(chats[0]);
+				if (chatDetails.username == username) {
+			    	var commands = [];
+
+			    	//command to remove this chatid
+			    	commands.push(['zrem', roomCode, JSON.stringify(chatDetails)]);
+
+			    	//add this chatid again with empty content
+			    	chatDetails.msg = '';
+			    	commands.push(['zadd', roomCode, 'NX', chatid, JSON.stringify(chatDetails)]);
+
+					return this.multi(commands);
+				} else {
+        			return new g_promise((resolve, reject) => reject('This user do not have permission to delete message.'));
+				}
+    		} else {
+        		return new g_promise((resolve, reject) => reject(chats.length+' chat(s) retrieved '));
+    		}
+    	})
+    	.then((results) => {
+    		if (results != 'null') {
+    			if (results[0] == 1 && results[1] == 1) {	
+                	return new g_promise((resolve, reject) => resolve(results));
+    			} else {
+                	return new g_promise((resolve, reject) => reject(results));
+    			}
+    		}
+    	})
+    	.catch((err) => {
+        	return new g_promise((resolve, reject) => reject(err));
+    	});
     };
 
     this.getLatestChat = (roomCode, page, limit = 10) => {
         var chats = [];
 		var checkUser = [];
 		var offset = limit*page;
-        return new promise((mresolve, mreject) => {
+        return new g_promise((mresolve, mreject) => {
 	        this.custom('zrevrangebyscore', roomCode, ['+inf', '-inf', 'withscores', 'limit', offset, limit])
 	            .then((results) => {
 	                if (results.length > 0) {
 	                    results.forEach((val, idx) => {
 	                        if ((idx % 2) == 0) {
 	                            var data = JSON.parse(val);
-                				data.id = data.time;
-	                            data.time = g_momentz.tz(g_moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
+                				data.id = results[idx+1];
+	                            data.time = g_momentz.tz(g_moment.utc(data.time), 'Asia/Ho_Chi_Minh')
 	                            				.format('DD/MM/YYYY HH:mm');
-                				data.datetime = g_momentz.tz(g_moment.utc(parseInt(results[idx + 1])), 'Asia/Ho_Chi_Minh')
+                				data.datetime = g_momentz.tz(g_moment.utc(data.time), 'Asia/Ho_Chi_Minh')
                 				.format('DD/MM/YYYY HH:mm');
 	                            chats.push(data);
 	                        }
 	                    });
 	                }
-	                return new promise((resolve, reject) => resolve(chats));
+	                return new g_promise((resolve, reject) => resolve(chats));
 	            })
 	            .then((results) => {
 	            	if (results.length > 0) {
@@ -54,7 +111,7 @@ function ChatsModel() {
 	            		});
 	            		return g_userModel.batch(commands);
 	            	} else {
-	                	return new promise((resolve, reject) => resolve([]));
+	                	return new g_promise((resolve, reject) => resolve([]));
 	            	}
 	            })
 	            .then((results) => {

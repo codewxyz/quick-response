@@ -29,6 +29,8 @@ module.exports = (app) => {
 	app.post('/main/aj/room-members', chatController.getRoomMembers);
 	app.post('/main/aj/chat-latest', chatController.getChatLatest);
 	app.post('/main/aj/change-setting', chatController.changeSetting);
+	app.post('/main/aj/delete-msg', chatController.deleteMessage);
+	app.post('/main/aj/edit-msg', chatController.editMessage);
 
 	app.get('/admin', adminController.show);
 	app.get('/admin/search/user', adminController.searchUser);
