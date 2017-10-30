@@ -965,7 +965,7 @@
         $('#'+getChatRoomIdName(g_worldRoom)).after(parseHtml);
 
         //save chat content of this room
-        g_chatContent[room.code] = '';
+        g_chatContent[room.code] = $.parseHTML('<tbody></tbody>');
         g_historyChatPage[room.code] = -1;
 
         //change seleted room to this room
@@ -1131,6 +1131,9 @@
     }
 
     function formatMsg(msg) {
+        if (typeof(msg) == 'number') {
+            msg = msg.toString();
+        }
         return msg.replace(/\n/gi, "<br/>");
     }
 
