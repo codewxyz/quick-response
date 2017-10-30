@@ -43,6 +43,7 @@
         validate_err_01: 'Please input message first.'
     };
     var g_selectorList = {
+        chat_container_table: '.chatbody table',
         chat_container_inner: '.chatbody table tbody',
         chat_container: '.chatbody',
         chat_container_overlay: '.chatbody-overlay',
@@ -196,8 +197,9 @@
 
     //first auto scroll if chat section is long
     $(g_selectorList.chat_container).on('qrsheightchange', function(e, containerHeight) {
-        var height = $(g_selectorList.chat_container_inner).height() < containerHeight ? containerHeight : $(g_selectorList.chat_container_inner).height();
-        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+        var height = ($(g_selectorList.chat_container_table).height() < containerHeight) ? 
+                        containerHeight : $(g_selectorList.chat_container_table).height();
+        $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_table).height() }, 0);
         setTimeout(() => {
             g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
         }, 20);
@@ -420,11 +422,12 @@
             },
             success: function(result, status, xhr) {
                 if (result.success) {
-                    $('#msg-'+data.chatid).find('.display-msg-content').addClass('display-msg-content-deleted');
-                    $('#msg-'+data.chatid).find('.display-msg-content').html(
+                    $('#'+getChatIdName(data.chatid)).find('.display-msg-content').addClass('display-msg-content-deleted');
+                    $('#'+getChatIdName(data.chatid)).find('.display-msg-content').html(
                         '<i class="fa fa-times-circle text-danger"></i> This message has been deleted.'
                     );
                     data.username = g_user.username;
+                    data.roomCode = g_curRoom;
                     g_curSocket.emit(g_roomEvents.message_deleted, data);
                 } else {
                     $('#qr-alert .modal-body').html(result.msg);
@@ -460,7 +463,7 @@
                 changeChatRoom(findNode);
                 if (findNode.data('room') != g_worldRoom) {
                     var roomNode = $(findNode).detach();
-                    $('#r-'+g_worldRoom).after(roomNode);
+                    $('#'+getChatRoomIdName(g_worldRoom)).after(roomNode);
                 }
             }
         } else {
@@ -537,17 +540,28 @@
         });
     }
 
+    function getChatIdName(id, roomCode='') {
+        return roomCode == '' ? 
+                $.escapeSelector('msg-'+g_curRoom+'-'+id) : 
+                $.escapeSelector('msg-'+roomCode+'-'+id);
+    }
+
+    function getChatRoomIdName(id) {
+        return $.escapeSelector('r-'+id);
+    }
+
     function getQuote(obj) {
         var chatid = obj.chatid;
         var name = obj.name;
+        var quoteId = g_curRoom+chatid;
 
-        var chatContent = $('#msg-'+chatid).find('.display-msg-content').html();
+        var chatContent = $('#'+getChatIdName(chatid)).find('.display-msg-content').html();
         var findQuote = chatContent.match(/<div class="display-msg-quote">(.*?)<\/div>/g);
         if (findQuote != null && findQuote.length > 0) {
             chatContent = chatContent.replace(findQuote[0], '');
         }
         var temp = '';
-        temp += '<div id="store-quote-'+chatid+'" style="display:none;">';
+        temp += '<div id="store-quote-'+quoteId+'" style="display:none;">';
         temp += '<div class="display-msg-quote">';
         temp += '<i class="fa fa-quote-left"></i> <b>'+name+'</b>:<br/>';
         temp += chatContent;
@@ -555,8 +569,8 @@
         temp += '</div>';
         $('body').append(temp);
 
-        var representQuote = '[quote]'+chatid+'[/quote]';
-        $($(g_selectorList.input_msg)[1]).html(representQuote);
+        var representQuote = '[quote]'+quoteId+'[/quote]';
+        $($(g_selectorList.input_msg)[1]).text(representQuote);
         $(g_selectorList.input_msg).focus();
 
         window.getSelection().collapse(
@@ -751,7 +765,7 @@
         loadNewChatContent(oldRoom);
         $('.chat-active').removeClass('chat-active');
         $(e).addClass('chat-active');
-        $('#r-' + $.escapeSelector(g_curRoom)).find('.chat-room-unread').html('');
+        $('#'+getChatRoomIdName(g_curRoom)).find('.chat-room-unread').html('');
     }
 
     function setSocketEvents() {
@@ -776,9 +790,8 @@
 
             //custom org event
             g_socketOrg[i].on(g_orgEvents.new_room, (obj) => {
-                console.log('new room');
                 if ((g_user.username == obj.username) &&
-                    ($('#r-' + $.escapeSelector(obj.room.code)).length == 0)) {
+                    ($('#'+getChatRoomIdName(obj.room.code)).length == 0)) {
                     displayNewRoom(obj.room);
                     if (obj.room.type == 'private') {
                         insertChatStatus({
@@ -829,12 +842,19 @@
         });
 
         g_socket.on(g_roomEvents.message_deleted, function(msg) {
-            if ( (msg.username != g_user.username) && 
-                ($('#msg-'+msg.chatid).length > 0) ) {                
-                $('#msg-'+msg.chatid).find('.display-msg-content').addClass('display-msg-content-deleted');
-                $('#msg-'+msg.chatid).find('.display-msg-content').html(
-                    '<i class="fa fa-times-circle text-danger"></i> This message has been deleted.'
-                );
+            if (msg.username != g_user.username) {
+                var deleteHtml = $.parseHTML('<i class="fa fa-times-circle text-danger"></i> This message has been deleted.');
+                if ((g_curRoom == msg.roomCode) && ($('#'+getChatIdName(msg.chatid)).length > 0)) {            
+                    $('#'+getChatIdName(msg.chatid)).find('.display-msg-content').addClass('display-msg-content-deleted');
+                    $('#'+getChatIdName(msg.chatid)).find('.display-msg-content').html(deleteHtml);
+                } else {
+                    if (g_chatContent[msg.roomCode] != null) {
+                        g_chatContent[msg.roomCode].find('#'+getChatIdName(msg.chatid, msg.roomCode))
+                            .find('.display-msg-content').addClass('display-msg-content-deleted');
+                        g_chatContent[msg.roomCode].find('#'+getChatIdName(msg.chatid, msg.roomCode))
+                            .find('.display-msg-content').html(deleteHtml);
+                    }
+                }    
             }
         });
 
@@ -942,7 +962,7 @@
     function displayNewRoom(room) {
         var temp = room.type == 'private' ? getPrivateRoomTemplate(room) : getRoomTemplate(room);
         var parseHtml = $.parseHTML($.trim(temp));
-        $('#r-'+g_worldRoom).after(parseHtml);
+        $('#'+getChatRoomIdName(g_worldRoom)).after(parseHtml);
 
         //save chat content of this room
         g_chatContent[room.code] = '';
@@ -988,10 +1008,10 @@
         var getQuote = '';
         var getMsg = content;
         if (quotes != null && quotes.length > 0) {
-            getQuote = $('#store-quote-'+quotes[0].replace(/\[\/?quote\]/g,'')).html();
-            getMsg = getQuote+content.replace(quotes[0], '');
+            getQuote = $('#store-quote-'+quotes[0].replace(/\[\/?quote\]/g,''));
+            getMsg = getQuote.html()+content.replace(quotes[0], '');
             //remove stored quote DOM
-            $('#store-quote-'+quotes[0].replace(/\[\/?quote\]/g,'')).remove();
+            getQuote.remove();
         }
         var msgObj = {
             content: getMsg,
@@ -1006,6 +1026,7 @@
         roomCode = obj.roomCode;
         // obj.msg = forge.util.decodeUtf8(obj.msg);
         var temp = getDisplayMessageTemplate(obj);
+        temp = $.parseHTML(temp);
 
         //check to store or display this message                    
         if (roomCode == g_curRoom) {
@@ -1013,25 +1034,23 @@
             //auto scroll to newest message on screen
             if ((obj.username == g_user.username) ||
                 ($(g_selectorList.chat_container).scrollTop() >= g_scrollChatHelper)) {
-                $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+                $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_table).height() }, 1000);
                 setTimeout(() => {
                     g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
                 }, 1020);
             }
         } else {
-            if (g_chatContent[roomCode] != undefined) {
-                g_chatContent[roomCode] += temp;
-            } else {
-                g_chatContent[roomCode] = temp;
+            if (g_chatContent[roomCode] != undefined && g_chatContent[roomCode] != null) {
+                g_chatContent[roomCode].append(temp);
             }
 
-            var eRoomCode = '#r-' + $.escapeSelector(roomCode);
+            var eRoomCode = '#' + getChatRoomIdName(roomCode);
             var unreadhHtml = $(eRoomCode).find('.chat-room-unread').html();
 
             $(eRoomCode).find('.chat-room-unread').html(parseInt(unreadhHtml == '' ? 0 : unreadhHtml) + 1);
             if (roomCode != g_worldRoom) {
                 var roomNode = $(eRoomCode).detach();
-                $('#r-'+g_worldRoom).after(roomNode);
+                $('#'+getChatRoomIdName(g_worldRoom)).after(roomNode);
             }
         }
     }
@@ -1057,7 +1076,7 @@
         str += '<td class="display-msg ${txt2}">';
         str += '<p class="display-msg-header"><span class="display-msg-header-username">${txt3}</span>&nbsp;&nbsp;';
         str += '<span class="display-msg-header-time" data-toggle="tooltip" data-placement="bottom" title="${txt6}">${txt4}</span></p>';
-        str += '<div class="display-msg-content ${txt10}">${txt5}</div>';
+        str += '<div class="display-msg-content ${txt11}">${txt5}</div>';
         str += '</td>';
         str += '</tr>';
         var temp = formatTxt(str, [
@@ -1071,7 +1090,7 @@
             obj.id,
             obj.username,
             obj.name,
-            obj.id,
+            g_curRoom+'-'+obj.id,
             msgStatusClass
         ]);
         return temp;
@@ -1098,15 +1117,15 @@
         if (roomCode == g_curRoom) {
             $(g_selectorList.chat_container_inner).append(temp);
             //auto scroll to newest message on screen
-            $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 1000);
+            $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_table).height() }, 1000);
             setTimeout(() => {
                 g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
             }, 1020);
         } else {
-            if (g_chatContent[roomCode] != undefined) {
-                g_chatContent[roomCode] += temp;
+            if (g_chatContent[roomCode] != undefined && g_chatContent[roomCode] != null) {
+                g_chatContent[roomCode].append(temp);
             } else {
-                g_chatContent[roomCode] = temp;
+                g_chatContent[roomCode] = $.parseHTML('<tbody></tbody>').append(temp);
             }
         }
     }
@@ -1127,7 +1146,7 @@
             if (getNs == 'W') {
                 getSk = g_socket;
                 getRoom = g_worldRoom;
-                g_chatContent[getRoom] = $(g_selectorList.chat_container_inner).html();
+                g_chatContent[getRoom] = null;
                 g_historyChatPage[getRoom] = 1;
 
             } else {
@@ -1149,7 +1168,7 @@
             beforeSend: function(xhr) {
                 // body...
                 $(g_selectorList.chat_container_overlay).css('display', 'block');
-                $(g_selectorList.chat_container_inner).css('display', 'none');
+                $(g_selectorList.chat_container_table).css('display', 'none');
             },
             complete: function(xhr, status) {
                 if (xhr.status == 403) {
@@ -1163,7 +1182,7 @@
 
                 setTimeout(() => {
                     $(g_selectorList.chat_container_overlay).css('display', 'none');
-                    $(g_selectorList.chat_container_inner).css('display', 'block');
+                    $(g_selectorList.chat_container_table).css('display', '');
                 }, 500);
             },
             success: function(result, status, xhr) {
@@ -1173,12 +1192,19 @@
                         result.data.forEach((val) => {
                             chatStr += getDisplayMessageTemplate(val);
                         });
-                        $(g_selectorList.chat_container_inner).prepend(chatStr);
+                        if ($(g_selectorList.chat_container_inner).length == 0) {
+
+                            $(g_selectorList.chat_container_table)
+                                .append($.parseHTML('<tbody></tbody>'))
+                                .append($.parseHTML(chatStr));
+                        } else {
+                            $(g_selectorList.chat_container_inner).prepend($.parseHTML(chatStr));
+                        }
                     }
                     var timer = setInterval(() => {
-                        if ($(g_selectorList.chat_container_inner).css('display') == 'block') {
+                        if ($(g_selectorList.chat_container_table).css('display') != 'none') {
                             if (g_historyChatPage[g_curRoom] < 1) {
-                                $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+                                $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_table).height() }, 0);
                                 setTimeout(() => {
                                     g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
                                 }, 20);
@@ -1199,16 +1225,15 @@
 
     function loadNewChatContent(old) {
         //store current chat room content
-        g_chatContent[old] = $(g_selectorList.chat_container_inner).html();
+        g_chatContent[old] = $(g_selectorList.chat_container_inner).detach();
         //get selected chat room content if exist & display
         if (g_chatContent[g_curRoom] != null && g_historyChatPage[g_curRoom] != 0) {
-            $(g_selectorList.chat_container_inner).html(g_chatContent[g_curRoom]);
-            $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_inner).height() }, 0);
+            $(g_selectorList.chat_container_table).append(g_chatContent[g_curRoom]);
+            $(g_selectorList.chat_container).animate({ scrollTop: $(g_selectorList.chat_container_table).height() }, 0);
             setTimeout(() => {
                 g_scrollChatHelper = $(g_selectorList.chat_container).scrollTop();
             }, 20);
         } else {
-            $(g_selectorList.chat_container_inner).html('');
             loadHistoryChatContent();
         }
     }

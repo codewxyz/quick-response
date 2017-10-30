@@ -125,7 +125,7 @@
             <table class="table">
                 <tbody>
                 {% for chat in chats %}
-                <tr id="msg-{{ chat.id }}">
+                <tr id="msg-{{ chat.roomCode }}-{{ chat.id }}">
                     <td class="avatar {{ "my-avatar" if (chat.username == user.username) }}">
                         <a class="has-popover" role="button" data-chatid="{{ chat.id }}" 
                         data-username="{{ chat.username }}" data-name="{{ chat.name }}" data-avatar="{{ chat.avatar }}">
@@ -163,6 +163,7 @@
 <form id="fm-logout" action="/logout" method="post" class="invisible">
 </form>
 
+<table id="dump-chat"></table>
 <input type="hidden" id="user" value="{{ user.username }}" data-username="{{ user.username }}" 
     data-name="{{ user.name }}" data-email="{{ user.email }}" data-avatar="{{ user.avatar }}" disabled />
 
