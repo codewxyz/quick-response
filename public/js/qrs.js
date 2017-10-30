@@ -15,7 +15,8 @@
         message: 'chat message',
         message_failed: 'chat message send failed',
         count_online: 'count user online',
-        buzz: 'chat buzz'
+        buzz: 'chat buzz',
+        message_deleted: 'chat message deleted'
     };
     var g_orgEvents = {
         join_room: 'user join room',
@@ -423,6 +424,8 @@
                     $('#msg-'+data.chatid).find('.display-msg-content').html(
                         '<i class="fa fa-times-circle text-danger"></i> This message has been deleted.'
                     );
+                    data.username = g_user.username;
+                    g_curSocket.emit(g_roomEvents.message_deleted, data);
                 } else {
                     $('#qr-alert .modal-body').html(result.msg);
                     $('#qr-alert').modal('show');
@@ -818,9 +821,20 @@
             }
             insertChat(msg);
         });
+
         g_socket.on(g_roomEvents.message_failed, function(msg) {
             if (msg.username == g_user.username) {
                 insertChatStatus(msg);
+            }
+        });
+
+        g_socket.on(g_roomEvents.message_deleted, function(msg) {
+            if ( (msg.username != g_user.username) && 
+                ($('#msg-'+msg.chatid).length > 0) ) {                
+                $('#msg-'+msg.chatid).find('.display-msg-content').addClass('display-msg-content-deleted');
+                $('#msg-'+msg.chatid).find('.display-msg-content').html(
+                    '<i class="fa fa-times-circle text-danger"></i> This message has been deleted.'
+                );
             }
         });
 

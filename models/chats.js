@@ -22,9 +22,11 @@ function ChatsModel() {
     	//script to run query
     	var dbScript = '';
     	dbScript += "local last_mem = redis.call('zrevrangebyscore', ARGV[1], '+inf', '-inf', 'withscores', 'limit', 0, 1) ";
-    	dbScript += "if ((last_mem[3] == nil) and (last_mem[2] ~= nil)) ";
-    	dbScript += "then local add_mem = redis.call('zadd', ARGV[1], 'NX', last_mem[2]+1, ARGV[2]) ";
-    	dbScript += "if (add_mem == 1) then return last_mem[2]+1 else return 0 end ";
+    	dbScript += "local new_score = 0 ";
+    	dbScript += "if (last_mem[3] == nil) ";
+    	dbScript += "then if (last_mem[1] == nil) then new_score = 1 else new_score = last_mem[2]+1 end ";
+    	dbScript += " local add_mem = redis.call('zadd', ARGV[1], 'NX', new_score, ARGV[2]) ";
+    	dbScript += " if (add_mem == 1) then return new_score else return 0 end ";
     	dbScript += "else return 0 end";
 
     	return this.custom('eval', dbScript, 2, 'keyroom', 'chatdata', this.getKey(roomCode, true), JSON.stringify(data))
@@ -89,10 +91,11 @@ function ChatsModel() {
 	                    results.forEach((val, idx) => {
 	                        if ((idx % 2) == 0) {
 	                            var data = JSON.parse(val);
+	                            var getTime = data.time;
                 				data.id = results[idx+1];
-	                            data.time = g_momentz.tz(g_moment.utc(data.time), 'Asia/Ho_Chi_Minh')
+	                            data.time = g_momentz.tz(g_moment.utc(getTime), 'Asia/Ho_Chi_Minh')
 	                            				.format('DD/MM/YYYY HH:mm');
-                				data.datetime = g_momentz.tz(g_moment.utc(data.time), 'Asia/Ho_Chi_Minh')
+                				data.datetime = g_momentz.tz(g_moment.utc(getTime), 'Asia/Ho_Chi_Minh')
                 				.format('DD/MM/YYYY HH:mm');
 	                            chats.push(data);
 	                        }
