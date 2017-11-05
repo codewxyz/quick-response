@@ -316,7 +316,7 @@
                             roomCode: data.roomCode,
                             username: val
                         };
-                        g_socketOrg[data.orgCode].emit(g_orgEvents.join_room, { obj });
+                        g_socketOrg[data.orgCode].emit(g_orgEvents.join_room, obj);
                     });
                     $('#qr-alert .modal-body').html(result.msg);
                     $('#qr-alert').modal('show');
@@ -1008,7 +1008,7 @@
         var getQuote = '';
         var getMsg = content;
         if (quotes != null && quotes.length > 0) {
-            getQuote = $('#store-quote-'+quotes[0].replace(/\[\/?quote\]/g,''));
+            getQuote = $('#store-quote-'+$.escapeSelector(quotes[0].replace(/\[\/?quote\]/g,'')));
             getMsg = getQuote.html()+content.replace(quotes[0], '');
             //remove stored quote DOM
             getQuote.remove();
