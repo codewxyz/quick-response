@@ -993,16 +993,18 @@
             alert(g_alertMsg.validate_err_01);
             return;
         }
-        var checkContent = content.match(/<div>(.*?)<\/div>/g);
-        if (checkContent != null ) {
-            content = content.split('<div>')[0] == '' ? '' : content.split('<div>')[0] + '<br>';
-            content = content.split('<div>')[0]+checkContent.filter((val) => {                
-                var newContent = val.replace(/(<br>)*<\/?div>/g,'').replace('<br>', '');
-                return newContent != '';
-            }).map(function(val){
-                return val.replace(/(<br>)*<\/?div>/g,'').replace('<br>', '');
-            }).join('<br/>');
+        if (navigator.userAgent.toLowerCase().search('chrome') > -1) {
+            content = content.replace('<div><br></div>', '');
         }
+        // if (checkContent != null ) {
+        //     // content = content.split('<div>')[0] == '' ? '' : content.split('<div>')[0] + '<br>';
+        //     content = content.split('<div>')[0]+checkContent.filter((val) => {                
+        //         var newContent = val.replace(/(<br>)*<\/?div>/g,'').replace('<br>', '');
+        //         return newContent != '';
+        //     }).map(function(val){
+        //         return val.replace(/(<br>)*<\/?div>/g,'').replace('<br>', '');
+        //     }).join('<br/>');
+        // }
         // add quote if exist
         var quotes = content.match(/\[quote\](.*?)\[\/quote\]/g);
         var getQuote = '';
@@ -1090,7 +1092,7 @@
             obj.id,
             obj.username,
             obj.name,
-            g_curRoom+'-'+obj.id,
+            roomCode+'-'+obj.id,
             msgStatusClass
         ]);
         return temp;
