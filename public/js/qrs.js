@@ -47,7 +47,8 @@
         chat_container_inner: '.chatbody table tbody',
         chat_container: '.chatbody',
         chat_container_overlay: '.chatbody-overlay',
-        input_msg: '.input-chat-msg'
+        input_msg: '.input-chat-msg',
+        texted_msg: '.input-chat-msg .emojionearea-editor'
     };
 
     var g_worldRoom = 'room';
@@ -74,16 +75,19 @@
 
     //--------setup for emoji input---------
     // Initializes and creates emoji set from sprite sheet
-    window.emojiPicker = new EmojiPicker({
-        emojiable_selector: '[data-emojiable=true]',
-        assetsPath: '../images/emoji/',
-        popupButtonClasses: 'fa fa-smile-o'
-    });
+    // window.emojiPicker = new EmojiPicker({
+    //     emojiable_selector: '[data-emojiable=true]',
+    //     assetsPath: '../images/emoji/',
+    //     popupButtonClasses: 'fa fa-smile-o'
+    // });
     // Finds all elements with `emojiable_selector` and converts them to rich emoji input fields
     // You may want to delay this step if you have dynamically created input fields that appear later in the loading process
     // It can be called as many times as necessary; previously converted input fields will not be converted again
-    window.emojiPicker.discover();
-    $(g_selectorList.input_msg).focus();
+    // window.emojiPicker.discover();
+
+    $(g_selectorList.input_msg).emojioneArea();
+
+    $(g_selectorList.texted_msg).focus();
     //--------end setup for emoji input---------
 
     //-----------------user actons------------------
@@ -213,11 +217,12 @@
 
     //send message to server when enter
     //combine CTRL+Enter to use multi lines message
-    $($(g_selectorList.input_msg)[1]).on('keydown', function(event) {
+    $(g_selectorList.input_msg).parent().on('keydown', g_selectorList.texted_msg, function(event) {
         var keyCode = event.which;
-        if (keyCode == 17) {
+                console.log("not emoji");
+        if (keyCode == 16) {
             g_msgKeyHelper = keyCode;
-        } else if (keyCode == 13 && g_msgKeyHelper != 17) {
+        } else if (keyCode == 13 && g_msgKeyHelper != 16) {
             $('.btn-chat-submit').click();
         } else {
             g_msgKeyHelper = 0;
@@ -226,8 +231,8 @@
     });
     $('.btn-chat-submit').on('click', function() {
         sendMsg(g_curSocket, g_curRoom);
-        $(g_selectorList.input_msg).focus();
-        $($(g_selectorList.input_msg)[1]).html('');
+        $(g_selectorList.texted_msg).html('');
+        $(g_selectorList.texted_msg).focus();
         return;
     });
 
@@ -570,8 +575,8 @@
         $('body').append(temp);
 
         var representQuote = '[quote]'+quoteId+'[/quote]';
-        $($(g_selectorList.input_msg)[1]).text(representQuote);
-        $(g_selectorList.input_msg).focus();
+        $(g_selectorList.texted_msg).text(representQuote);
+        $(g_selectorList.texted_msg).focus();
 
         window.getSelection().collapse(
             document.getElementsByClassName('emoji-wysiwyg-editor')[0].firstChild, 
@@ -982,7 +987,7 @@
 
     //validate input and send to server
     function sendMsg(sk, room) {
-        var content = $($(g_selectorList.input_msg)[1]).html().trim();
+        var content = $(g_selectorList.texted_msg).html().trim();
         // content = content.replace('<div><br></div>', '');
         // if (content.startsWith('<br>')) {
         //     content = content.replace('<br>', '');
@@ -1067,7 +1072,12 @@
         if (obj.msg == '') {
             obj.msg = '<i class="fa fa-times-circle text-danger"></i> This message has been deleted.';
             msgStatusClass = 'display-msg-content-deleted';
-        }
+        } else {
+            var getFind = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g.exec(obj.msg);
+            if (getFind != null && getFind[0] == obj.msg) {
+                obj.msg = '<a href="'+obj.msg+'" target="_blank"><img src="'+obj.msg+'" width="70" alt="'+obj.msg+'" title="'+obj.msg+'" /></a>';
+            }
+        } 
         var str = "";
         str += '<tr id="msg-${txt10}">';
         str += '<td class="avatar ${txt0}">';
@@ -1136,7 +1146,12 @@
         if (typeof(msg) == 'number') {
             msg = msg.toString();
         }
-        return msg.replace(/\n/gi, "<br/>");
+        var getFind = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g.exec(msg);
+        if (getFind != null && getFind[0] == msg) {
+            msg = '<a href="'+msg+'" target="_blank"><img src="'+msg+'" width="70" alt="'+msg+'" title="'+msg+'" /></a>';
+        }
+        msg = msg.replace(/\n/gi, "<br/>");
+        return msg;
     }
 
     //init run, connect to all room user has access

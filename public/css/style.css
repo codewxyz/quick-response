@@ -197,8 +197,8 @@ body {
     }
 }
 
-.input-chat-msg {
-    min-height: 70px;
+.input-chat-msg, .emojionearea-editor {
+    min-height: 70px !important;
     height: 70px !important;
     max-width: 100%;
 }
