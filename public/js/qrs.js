@@ -219,7 +219,6 @@
     //combine CTRL+Enter to use multi lines message
     $(g_selectorList.input_msg).parent().on('keydown', g_selectorList.texted_msg, function(event) {
         var keyCode = event.which;
-                console.log("not emoji");
         if (keyCode == 16) {
             g_msgKeyHelper = keyCode;
         } else if (keyCode == 13 && g_msgKeyHelper != 16) {
@@ -440,6 +439,32 @@
                 }
             }
         });
+    });
+
+    $('#cu-insert-img').on('click', function() {
+        $('#qr-modal-cu-insert-img').modal('show');
+    });
+    $('#fm-cuii-url').on('change input', function() {
+        $('#cuii-preview').attr('src', $('#fm-cuii-url').val());
+    });
+
+    $('#qr-modal-cu-insert-img').on('hidden.bs.modal', function() {
+        $('#fm-cuii-url').val('');
+        $('#cuii-preview').attr('src', './images/logo.png');
+    });
+    $('.btn-fm-cuii-submit').on('click', function() {
+        var getUrl = $('#fm-cuii-url').val();
+        var getFind = /https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*\.(jpg|gif|jpeg|png))/g.exec(getUrl);
+        var getFind2 = /https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g.exec(getUrl);
+        if (getFind || (getFind2 && getFind2[0].indexOf('googleusercontent.com') > -1)) {
+            getUrl  = '[format_image]' + getUrl;
+            $(g_selectorList.texted_msg).text(getUrl);
+            $('.btn-chat-submit').click();
+            $('#qr-modal-cu-insert-img').modal('hide');
+        } else {
+            $('#qr-alert .modal-body').html('Not a valid image URL. Make sure your URL is a secure link with HTTPS at the beginning.');
+            $('#qr-alert').modal('show');
+        }
     });
 
     function confirmDeleteMsg(obj) {
@@ -1062,6 +1087,29 @@
         }
     }
 
+    function getFormattedMsg(msg) {
+        //find image message
+        var getFindImg = /\[format_image\](https?:\/\/.*)/g.exec(msg);
+        var getImg = '';
+        if (getFindImg != null && getFindImg[0] == msg) {
+            getImg = getFindImg[1];
+            msg = '<a data-magnify="gallery" href="'+getImg+'" target="_blank"><img src="'+getImg+'" width="150" alt="'+getImg+'" title="'+getImg+'" /></a>';
+        } else {
+            var regexUrl = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+            var getFind;
+            var oldMsg = msg;
+            var dupUrl = [];
+            do {
+                getFind = regexUrl.exec(oldMsg);
+                if (getFind != null && dupUrl.indexOf(getFind[0]) == -1 && getFind[0].indexOf('cdn.jsdelivr.net') == -1) {
+                    msg = msg.replace(new RegExp(getFind[0].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), '<a href="'+getFind[0]+'" target="_blank">'+getFind[0]+'</a>');
+                    dupUrl.push(getFind[0]);
+                }
+            } while (getFind);
+        }
+        return msg;
+    }
+
     function getDisplayMessageTemplate(obj) {
         roomCode = obj.roomCode;
         var selfClass = ['',''];
@@ -1073,10 +1121,7 @@
             obj.msg = '<i class="fa fa-times-circle text-danger"></i> This message has been deleted.';
             msgStatusClass = 'display-msg-content-deleted';
         } else {
-            var getFind = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g.exec(obj.msg);
-            if (getFind != null && getFind[0] == obj.msg) {
-                obj.msg = '<a href="'+obj.msg+'" target="_blank"><img src="'+obj.msg+'" width="70" alt="'+obj.msg+'" title="'+obj.msg+'" /></a>';
-            }
+            obj.msg = getFormattedMsg(obj.msg);
         } 
         var str = "";
         str += '<tr id="msg-${txt10}">';
@@ -1146,10 +1191,7 @@
         if (typeof(msg) == 'number') {
             msg = msg.toString();
         }
-        var getFind = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g.exec(msg);
-        if (getFind != null && getFind[0] == msg) {
-            msg = '<a href="'+msg+'" target="_blank"><img src="'+msg+'" width="70" alt="'+msg+'" title="'+msg+'" /></a>';
-        }
+        msg = getFormattedMsg(msg);
         msg = msg.replace(/\n/gi, "<br/>");
         return msg;
     }
