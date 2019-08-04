@@ -152,6 +152,30 @@ body {
 .chat-utils i {
     cursor: pointer;
 }
+.tab-cu-stickers .tab-content {
+    overflow: auto;;
+}
+.tab-cu-stickers .tab-sticker {
+    min-height: 200px;
+    max-height: 200px;
+}
+.tab-cu-stickers .tab-sticker img{
+    width: 70px;
+    height: 60px;
+}
+.tab-cu-stickers .nav-tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: -webkit-box;
+    display: -moz-box;
+}
+
+.tab-cu-stickers .nav-tabs>li {
+    float: none;
+}
+.popover {
+    max-width: 340px !important;
+}
 .chatbody {
     padding: 15px;
     /*margin-bottom: 10px;*/

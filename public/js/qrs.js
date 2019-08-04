@@ -441,6 +441,7 @@
         });
     });
 
+    //----------------------------chat utils--------------------------
     $('#cu-insert-img').on('click', function() {
         $('#qr-modal-cu-insert-img').modal('show');
     });
@@ -466,6 +467,59 @@
             $('#qr-alert').modal('show');
         }
     });
+
+    prepareStickers();
+    $('body').on('click', function (e) {
+        if ($(e.target).parents('.tab-cu-stickers').length > 0) {
+            return;
+        }
+        if ($(e.target).attr('id') != 'cu-stickers') {
+            $('#cu-stickers').popover('hide');
+        } else {
+            $('#cu-stickers').popover('toggle');
+        }
+    });
+
+    $('#cu-stickers').popover({
+        title: 'Stickers',
+        container: 'body',
+        placement: 'top',
+        trigger: 'manual',
+        html: true,
+        content: $('#popover-cu-stickers').html()
+    });
+
+    //--------------------------------end chat utils-----------------------
+
+    function prepareStickers() {
+        var idx = 0;
+        for (var stickerName in QR_STICKERS) {
+            var firstClass = '';
+
+            if (idx == 0) {
+                firstClass = 'active';
+            }
+
+            var imgContainerE = $('<div class="tab-sticker tab-pane tab-sticker'+idx+' '+firstClass+'" role="tabpanel"></div>');
+
+            $('.tab-cu-stickers .nav-tabs').append('<li class="nav-item '
+                    +firstClass+'"><a class="nav-link" data-toggle="tab" href=".tab-sticker'
+                    +idx+'" role="tab">'+stickerName.toUpperCase()+'</a></li>');
+
+            for(var imgIdx in QR_STICKERS[stickerName]) {
+                var imgInfo = QR_STICKERS[stickerName][imgIdx];
+                imgContainerE.append('<img src="'+imgInfo[0]+'" alt="'+imgInfo[1]+'" title="'+imgInfo[2]+'"/>');
+            }
+
+            $('.tab-cu-stickers .tab-content').append(imgContainerE);
+            
+            idx++;
+        }
+        $('body').on('click', '.tab-cu-stickers img', function() {
+            $(g_selectorList.texted_msg).text('[format_image]' + $(this).attr('src'));
+            $('.btn-chat-submit').click();
+        });
+    }
 
     function confirmDeleteMsg(obj) {
         //user can only delete their own message
@@ -1089,11 +1143,14 @@
 
     function getFormattedMsg(msg) {
         //find image message
-        var getFindImg = /\[format_image\](https?:\/\/.*)/g.exec(msg);
+        var getFindImg = /\[format_image\](https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*\.(jpg|gif|jpeg|png)))/g.exec(msg);
         var getImg = '';
-        if (getFindImg != null && getFindImg[0] == msg) {
+        if (getFindImg != null && getFindImg.length > 2) {
             getImg = getFindImg[1];
-            msg = '<a data-magnify="gallery" href="'+getImg+'" target="_blank"><img src="'+getImg+'" width="150" alt="'+getImg+'" title="'+getImg+'" /></a>';
+            // msg = '<a data-magnify="gallery" href="'+getImg+'" target="_blank"><img src="'+getImg+'" width="150" alt="'+getImg+'" title="'+getImg+'" /></a>';
+            msg = msg.replace('[format_image]', '');
+            msg = msg.replace(new RegExp(getImg.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), 
+                    '<a data-magnify="gallery" href="'+getImg+'" target="_blank"><img src="'+getImg+'" width="150" alt="'+getImg+'" title="'+getImg+'" /></a>');
         } else {
             var regexUrl = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
             var getFind;
