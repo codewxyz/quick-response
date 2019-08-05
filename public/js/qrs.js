@@ -516,7 +516,7 @@
             idx++;
         }
         $('body').on('click', '.tab-cu-stickers img', function() {
-            $(g_selectorList.texted_msg).text('[format_image]' + $(this).attr('src'));
+            $(g_selectorList.texted_msg).text('[sticker_img]' + $(this).attr('src'));
             $('.btn-chat-submit').click();
         });
     }
@@ -1144,13 +1144,19 @@
     function getFormattedMsg(msg) {
         //find image message
         var getFindImg = /\[format_image\](https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*\.(jpg|gif|jpeg|png)))/g.exec(msg);
+        var getFindSticker = /\[sticker_img\](https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*\.(jpg|gif|jpeg|png)))/g.exec(msg);
         var getImg = '';
-        if (getFindImg != null && getFindImg.length > 2) {
+        if (getFindSticker != null && getFindSticker.length > 2) {
+            getImg = getFindSticker[1];
+            msg = msg.replace('[sticker_img]', '');
+            msg = msg.replace(new RegExp(getImg.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), 
+                    '<a data-magnify="gallery" href="'+getImg+'"><img src="'+getImg+'" width="110" alt="sticker_image" title="sticker" /></a>');
+        } else if (getFindImg != null && getFindImg.length > 2) {
             getImg = getFindImg[1];
             // msg = '<a data-magnify="gallery" href="'+getImg+'" target="_blank"><img src="'+getImg+'" width="150" alt="'+getImg+'" title="'+getImg+'" /></a>';
             msg = msg.replace('[format_image]', '');
             msg = msg.replace(new RegExp(getImg.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), 
-                    '<a data-magnify="gallery" href="'+getImg+'" target="_blank"><img src="'+getImg+'" width="150" alt="'+getImg+'" title="'+getImg+'" /></a>');
+                    '<a data-magnify="gallery" href="'+getImg+'"><img src="'+getImg+'" width="150" alt="'+getImg+'" title="'+getImg+'" /></a>');
         } else {
             var regexUrl = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
             var getFind;
