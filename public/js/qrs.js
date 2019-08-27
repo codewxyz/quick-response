@@ -469,6 +469,8 @@
     });
 
     prepareStickers();
+    prepareStickersEmoji();
+
     $('body').on('click', function (e) {
         if ($(e.target).parents('.tab-cu-stickers').length > 0) {
             return;
@@ -487,6 +489,26 @@
         trigger: 'manual',
         html: true,
         content: $('#popover-cu-stickers').html()
+    });
+
+    $('body').on('click', function (e) {
+        if ($(e.target).parents('.tab-cu-stickers-emoji').length > 0) {
+            return;
+        }
+        if ($(e.target).attr('id') != 'cu-stickers-emoji') {
+            $('#cu-stickers-emoji').popover('hide');
+        } else {
+            $('#cu-stickers-emoji').popover('toggle');
+        }
+    });
+
+    $('#cu-stickers-emoji').popover({
+        title: 'Animated Emoji',
+        container: 'body',
+        placement: 'top',
+        trigger: 'manual',
+        html: true,
+        content: $('#popover-cu-stickers-emoji').html()
     });
 
     //--------------------------------end chat utils-----------------------
@@ -517,6 +539,36 @@
         }
         $('body').on('click', '.tab-cu-stickers img', function() {
             $(g_selectorList.texted_msg).text('[sticker_img]' + $(this).attr('src'));
+            $('.btn-chat-submit').click();
+        });
+    }
+
+    function prepareStickersEmoji() {
+        var idx = 0;
+        for (var stickerName in QR_EMOJI) {
+            var firstClass = '';
+
+            if (idx == 0) {
+                firstClass = 'active';
+            }
+
+            var imgContainerE = $('<div class="tab-sticker-emoji tab-pane tab-sticker-emoji'+idx+' '+firstClass+'" role="tabpanel"></div>');
+
+            $('.tab-cu-stickers-emoji .nav-tabs').append('<li class="nav-item '
+                    +firstClass+'"><a class="nav-link" data-toggle="tab" href=".tab-sticker-emoji'
+                    +idx+'" role="tab">'+stickerName.toUpperCase()+'</a></li>');
+
+            for(var imgIdx in QR_EMOJI[stickerName]) {
+                var imgInfo = QR_EMOJI[stickerName][imgIdx];
+                imgContainerE.append('<img src="'+imgInfo[0]+'" alt="'+imgInfo[1]+'" title="'+imgInfo[2]+'"/>');
+            }
+
+            $('.tab-cu-stickers-emoji .tab-content').append(imgContainerE);
+            
+            idx++;
+        }
+        $('body').on('click', '.tab-cu-stickers-emoji img', function() {
+            $(g_selectorList.texted_msg).text('[emoji_img]' + $(this).attr('src'));
             $('.btn-chat-submit').click();
         });
     }
@@ -1145,12 +1197,18 @@
         //find image message
         var getFindImg = /\[format_image\](https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*\.(jpg|gif|jpeg|png)))/g.exec(msg);
         var getFindSticker = /\[sticker_img\](https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*\.(jpg|gif|jpeg|png)))/g.exec(msg);
+        var getFindEmoji = /\[emoji_img\](https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*\.(jpg|gif|jpeg|png)))/g.exec(msg);
         var getImg = '';
         if (getFindSticker != null && getFindSticker.length > 2) {
             getImg = getFindSticker[1];
             msg = msg.replace('[sticker_img]', '');
             msg = msg.replace(new RegExp(getImg.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), 
                     '<a data-magnify="gallery" href="'+getImg+'"><img src="'+getImg+'" width="110" alt="sticker_image" title="sticker" /></a>');
+        } else if (getFindEmoji != null && getFindEmoji.length > 2) {
+            getImg = getFindEmoji[1];
+            msg = msg.replace('[emoji_img]', '');
+            msg = msg.replace(new RegExp(getImg.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), 
+                    '<a data-magnify="gallery" href="'+getImg+'"><img src="'+getImg+'" width="60" alt="emoji_img" title="animated emoji" /></a>');
         } else if (getFindImg != null && getFindImg.length > 2) {
             getImg = getFindImg[1];
             // msg = '<a data-magnify="gallery" href="'+getImg+'" target="_blank"><img src="'+getImg+'" width="150" alt="'+getImg+'" title="'+getImg+'" /></a>';

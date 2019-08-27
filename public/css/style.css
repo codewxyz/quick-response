@@ -152,10 +152,10 @@ body {
 .chat-utils i {
     cursor: pointer;
 }
-.tab-cu-stickers .tab-content {
-    overflow: auto;;
+.tab-cu-stickers .tab-content, .tab-cu-stickers-emoji .tab-content {
+    overflow: auto;
 }
-.tab-cu-stickers .tab-sticker {
+.tab-cu-stickers .tab-sticker, .tab-cu-stickers-emoji .tab-sticker-emoji {
     min-height: 200px;
     max-height: 200px;
 }
@@ -163,14 +163,18 @@ body {
     width: 70px;
     height: 60px;
 }
-.tab-cu-stickers .nav-tabs {
+.tab-cu-stickers-emoji .tab-sticker-emoji img{
+    width: 40px;
+    height: 30px;
+}
+.tab-cu-stickers .nav-tabs, .tab-cu-stickers-emoji .nav-tabs {
     overflow-x: auto;
     overflow-y: hidden;
     display: -webkit-box;
     display: -moz-box;
 }
 
-.tab-cu-stickers .nav-tabs>li {
+.tab-cu-stickers .nav-tabs>li, .tab-cu-stickers-emoji .nav-tabs>li {
     float: none;
 }
 .popover {

@@ -1,8 +1,9 @@
 {% extends "layout.html" %} 
 
 {% block content %}
-<div class="bg-waitting">
-    <div class="cssload-preloader">
+<div class="bg-waitting" style="margin: auto; text-align: center; vertical-align: middle; padding-top: 10%;">
+    <img src="https://media.giphy.com/media/NFbs20puOHq9y/giphy.gif" width="300" alt="loading..." title="loading..." />
+    <!-- <div class="cssload-preloader">
     <div class="cssload-preloader-box">
         <div>L</div>
         <div>o</div>
@@ -12,7 +13,7 @@
         <div>n</div>
         <div>g</div>
     </div>
-    </div>
+    </div> -->
 </div>
 <div id="page-main">
 <div class="row" style="box-sizing: border-box;">
@@ -151,6 +152,8 @@
         <div class="chat-utils">
             <i id="cu-insert-img" class="fa fa-picture-o fa-2x" aria-hidden="true" title="insert image"></i>
             &nbsp;&nbsp;&nbsp;
+            <i id="cu-stickers-emoji" class="fa fa-smile-o fa-2x" aria-hidden="true" title="animated emoji"></i>
+            &nbsp;&nbsp;&nbsp;
             <i id="cu-stickers" class="fa fa-paw fa-2x" aria-hidden="true" title="stickers"></i>
         </div>
         <div class="row">
@@ -184,6 +187,14 @@
 </div>  
 <div id="popover-cu-stickers" class="hide">
     <div class="tab-cu-stickers">
+        <ul class="nav nav-tabs" role="tablist">
+        </ul>
+        <div class="tab-content">
+        </div>
+    </div>
+</div>
+<div id="popover-cu-stickers-emoji" class="hide">
+    <div class="tab-cu-stickers-emoji">
         <ul class="nav nav-tabs" role="tablist">
         </ul>
         <div class="tab-content">
